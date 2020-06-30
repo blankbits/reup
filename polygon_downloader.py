@@ -7,7 +7,7 @@ It defaults to using the config specified in polygon_downloader_config.yaml, but
 this can be overridden via a command line arg.
 
 Example:
-    ./main.py --config_file custom_config.yaml
+    ./polygon_downloader.py --config_file custom_config.yaml
 
 """
 import argparse
