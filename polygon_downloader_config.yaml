@@ -1,19 +1,22 @@
 api_key: ''
 response_limit: 50000
-symbol: 'MSFT'
-date: '2018-03-02'
+symbols: ['AAPL', 'MSFT']
+date: '2019-01-02'
 time_zone: 'US/Eastern'
 max_start_hour: 9
 max_start_minute: 35
 min_end_hour: 15
 min_end_minute: 55
 max_delta_minutes: 5
-quotes_responses_path: 'quotes.responses.gz'
-quotes_csv_path: 'quotes.csv.gz'
-trades_responses_path: 'trades.responses.gz'
-trades_csv_path: 'trades.csv.gz'
 
-# Passed through to logging.config.dictConfig(config)
+# Comment out the filename lines to skip writing the respective files.
+download_path: 'data'
+quotes_responses_filename: 'quotes.responses.gz'
+quotes_csv_filename: 'quotes.csv.gz'
+trades_responses_filename: 'trades.responses.gz'
+trades_csv_filename: 'trades.csv.gz'
+
+# Passed through to logging.config.dictConfig(config).
 logging:
   version: 1
   formatters:

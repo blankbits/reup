@@ -17,6 +17,7 @@ import gzip
 import io
 import logging
 import logging.config
+import os
 import pickle
 import sys
 import threading
@@ -66,6 +67,31 @@ class AsyncWriteFileGzip(threading.Thread):
         except OSError:
             logger.error('Write failed')
             sys.exit(1)
+
+
+def make_directory(path: str) -> None:
+    """Make a new directory if it doesn't exist, and also make any parent
+    directories that don't exist.
+
+    Args:
+        path: Directory path.
+
+    Raises:
+        SystemExit: An error occurred when trying to make a directory.
+
+    """
+    logger = logging.getLogger(__name__)
+
+    directories = list(filter(None, path.split('/')))
+    for i, _ in enumerate(directories):
+        local_path = '/'.join(directories[:(i + 1)])
+        if not os.path.exists(local_path):
+            try:
+                logger.info('Making directory | path: %s', local_path)
+                os.makedirs(local_path)
+            except OSError:
+                logger.error('Make directory failed')
+                sys.exit(1)
 
 
 def fetch_responses(historical_data_type: HistoricalDataType, api_key: str,
@@ -237,8 +263,8 @@ def validate_timestamps(csv_data: str, time_zone: datetime.tzinfo,
         sys.exit(1)
 
 
-def main():
-    """Begin executing main logic of the script.
+def load_config() -> dict:
+    """ Load config from YAML file.
 
     """
     # Parse command line args and load config.
@@ -251,6 +277,17 @@ def main():
     with open(args.config_file, 'r') as config_file:
         config = yaml.safe_load(config_file.read())
 
+    return config
+
+
+def main():
+    """Begin executing main logic of the script.
+
+    """
+    # Load config and setup logger.
+    config = load_config()
+    logging.config.dictConfig(config['logging'])
+
     # Initialize date and time variables from config.
     time_zone = pytz.timezone(config['time_zone'])
     max_time_start = datetime.time(hour=config['max_start_hour'],
@@ -259,61 +296,69 @@ def main():
                                  minute=config['min_end_minute'])
     max_time_delta = datetime.timedelta(minutes=config['max_delta_minutes'])
 
-    # Setup logger.
-    logging.config.dictConfig(config['logging'])
-
     # Threads for writing files async.
     threads = []
 
-    # Fetch raw quotes API responses if needed for writing files.
-    if 'quotes_responses_path' in config or 'quotes_csv_path' in config:
-        quotes_responses = fetch_responses(HistoricalDataType.QUOTES,
-                                           config['api_key'],
-                                           config['response_limit'],
-                                           config['symbol'], config['date'])
+    # Process each symbol in the config.
+    for symbol in config['symbols']:
+        # Populate file prefix and make new directories as needed.
+        file_prefix = '/'.join(
+            [config['download_path'], config['date'], symbol]) + '/'
+        make_directory(file_prefix)
 
-    # Write raw quotes API responses to file.
-    if 'quotes_responses_path' in config:
-        threads.append(
-            AsyncWriteFileGzip(pickle.dumps(quotes_responses),
-                               config['quotes_responses_path']))
-        threads[-1].start()
+        # Fetch raw quotes API responses if needed for writing files.
+        if ('quotes_responses_filename' in config
+                or 'quotes_csv_filename' in config):
+            quotes_responses = fetch_responses(HistoricalDataType.QUOTES,
+                                               config['api_key'],
+                                               config['response_limit'],
+                                               symbol, config['date'])
 
-    # Generate quotes CSV from responses, validate, and write to file.
-    if 'quotes_csv_path' in config:
-        quotes_csv_data = generate_csv(HistoricalDataType.QUOTES,
-                                       quotes_responses)
-        validate_timestamps(quotes_csv_data, time_zone, max_time_start,
-                            min_time_end, max_time_delta)
-        threads.append(
-            AsyncWriteFileGzip(quotes_csv_data.encode(),
-                               config['quotes_csv_path']))
-        threads[-1].start()
+        # Write raw quotes API responses to file.
+        if 'quotes_responses_filename' in config:
+            threads.append(
+                AsyncWriteFileGzip(
+                    pickle.dumps(quotes_responses),
+                    file_prefix + config['quotes_responses_filename']))
+            threads[-1].start()
 
-    # Fetch raw trades API responses if needed for writing files.
-    if 'trades_responses_path' in config or 'trades_csv_path' in config:
-        trades_responses = fetch_responses(HistoricalDataType.TRADES,
-                                           config['api_key'],
-                                           config['response_limit'],
-                                           config['symbol'], config['date'])
+        # Generate quotes CSV from responses, validate, and write to file.
+        if 'quotes_csv_filename' in config:
+            quotes_csv_data = generate_csv(HistoricalDataType.QUOTES,
+                                           quotes_responses)
+            validate_timestamps(quotes_csv_data, time_zone, max_time_start,
+                                min_time_end, max_time_delta)
+            threads.append(
+                AsyncWriteFileGzip(quotes_csv_data.encode(), file_prefix +
+                                   config['quotes_csv_filename']))
+            threads[-1].start()
 
-    # Write raw trades API responses to file.
-    if 'trades_responses_path' in config:
-        threads.append(
-            AsyncWriteFileGzip(pickle.dumps(trades_responses),
-                               config['trades_responses_path']))
-        threads[-1].start()
+        # Fetch raw trades API responses if needed for writing files.
+        if ('trades_responses_filename' in config
+                or 'trades_csv_filename' in config):
+            trades_responses = fetch_responses(HistoricalDataType.TRADES,
+                                               config['api_key'],
+                                               config['response_limit'],
+                                               symbol, config['date'])
 
-    # Generate trades CSV from responses, validate, and write to file.
-    if 'trades_csv_path' in config:
-        trades_csv_data = generate_csv(HistoricalDataType.TRADES,
-                                       trades_responses)
-        validate_timestamps(trades_csv_data, time_zone, max_time_start,
-                            min_time_end, max_time_delta)
-        threads.append(
-            AsyncWriteFileGzip(trades_csv_data.encode(),
-                               config['trades_csv_path']))
-        threads[-1].start()
+        # Write raw trades API responses to file.
+        if 'trades_responses_filename' in config:
+            threads.append(
+                AsyncWriteFileGzip(
+                    pickle.dumps(trades_responses),
+                    file_prefix + config['trades_responses_filename']))
+            threads[-1].start()
+
+        # Generate trades CSV from responses, validate, and write to file.
+        if 'trades_csv_filename' in config:
+            trades_csv_data = generate_csv(HistoricalDataType.TRADES,
+                                           trades_responses)
+            validate_timestamps(trades_csv_data, time_zone, max_time_start,
+                                min_time_end, max_time_delta)
+            threads.append(
+                AsyncWriteFileGzip(trades_csv_data.encode(), file_prefix +
+                                   config['trades_csv_filename']))
+            threads[-1].start()
 
     # Wait for files to finish writing async.
     for thread in threads:
