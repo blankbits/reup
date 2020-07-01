@@ -299,66 +299,69 @@ def main():
     # Threads for writing files async.
     threads = []
 
-    # Process each symbol in the config.
-    for symbol in config['symbols']:
-        # Populate file prefix and make new directories as needed.
-        file_prefix = '/'.join(
-            [config['download_path'], config['date'], symbol]) + '/'
-        make_directory(file_prefix)
+    # Process each date and symbol in the config.
+    for date in config['dates']:
+        for symbol in config['symbols']:
+            # Populate file prefix and make new directories as needed.
+            file_prefix = '/'.join([config['download_path'], date, symbol
+                                    ]) + '/'
+            make_directory(file_prefix)
 
-        # Fetch raw quotes API responses if needed for writing files.
-        if ('quotes_responses_filename' in config
-                or 'quotes_csv_filename' in config):
-            quotes_responses = fetch_responses(HistoricalDataType.QUOTES,
-                                               config['api_key'],
-                                               config['response_limit'],
-                                               symbol, config['date'])
+            # Fetch raw quotes API responses if needed for writing files.
+            if ('quotes_responses_filename' in config
+                    or 'quotes_csv_filename' in config):
+                quotes_responses = fetch_responses(HistoricalDataType.QUOTES,
+                                                   config['api_key'],
+                                                   config['response_limit'],
+                                                   symbol, date)
 
-        # Write raw quotes API responses to file.
-        if 'quotes_responses_filename' in config:
-            threads.append(
-                AsyncWriteFileGzip(
-                    pickle.dumps(quotes_responses),
-                    file_prefix + config['quotes_responses_filename']))
-            threads[-1].start()
+            # Write raw quotes API responses to file.
+            if 'quotes_responses_filename' in config:
+                threads.append(
+                    AsyncWriteFileGzip(
+                        pickle.dumps(quotes_responses),
+                        file_prefix + config['quotes_responses_filename']))
+                threads[-1].start()
 
-        # Generate quotes CSV from responses, validate, and write to file.
-        if 'quotes_csv_filename' in config:
-            quotes_csv_data = generate_csv(HistoricalDataType.QUOTES,
-                                           quotes_responses)
-            validate_timestamps(quotes_csv_data, time_zone, max_time_start,
-                                min_time_end, max_time_delta)
-            threads.append(
-                AsyncWriteFileGzip(quotes_csv_data.encode(), file_prefix +
-                                   config['quotes_csv_filename']))
-            threads[-1].start()
+            # Generate quotes CSV from responses, validate, and write to file.
+            if 'quotes_csv_filename' in config:
+                quotes_csv_data = generate_csv(HistoricalDataType.QUOTES,
+                                               quotes_responses)
+                validate_timestamps(quotes_csv_data, time_zone, max_time_start,
+                                    min_time_end, max_time_delta)
+                threads.append(
+                    AsyncWriteFileGzip(
+                        quotes_csv_data.encode(),
+                        file_prefix + config['quotes_csv_filename']))
+                threads[-1].start()
 
-        # Fetch raw trades API responses if needed for writing files.
-        if ('trades_responses_filename' in config
-                or 'trades_csv_filename' in config):
-            trades_responses = fetch_responses(HistoricalDataType.TRADES,
-                                               config['api_key'],
-                                               config['response_limit'],
-                                               symbol, config['date'])
+            # Fetch raw trades API responses if needed for writing files.
+            if ('trades_responses_filename' in config
+                    or 'trades_csv_filename' in config):
+                trades_responses = fetch_responses(HistoricalDataType.TRADES,
+                                                   config['api_key'],
+                                                   config['response_limit'],
+                                                   symbol, date)
 
-        # Write raw trades API responses to file.
-        if 'trades_responses_filename' in config:
-            threads.append(
-                AsyncWriteFileGzip(
-                    pickle.dumps(trades_responses),
-                    file_prefix + config['trades_responses_filename']))
-            threads[-1].start()
+            # Write raw trades API responses to file.
+            if 'trades_responses_filename' in config:
+                threads.append(
+                    AsyncWriteFileGzip(
+                        pickle.dumps(trades_responses),
+                        file_prefix + config['trades_responses_filename']))
+                threads[-1].start()
 
-        # Generate trades CSV from responses, validate, and write to file.
-        if 'trades_csv_filename' in config:
-            trades_csv_data = generate_csv(HistoricalDataType.TRADES,
-                                           trades_responses)
-            validate_timestamps(trades_csv_data, time_zone, max_time_start,
-                                min_time_end, max_time_delta)
-            threads.append(
-                AsyncWriteFileGzip(trades_csv_data.encode(), file_prefix +
-                                   config['trades_csv_filename']))
-            threads[-1].start()
+            # Generate trades CSV from responses, validate, and write to file.
+            if 'trades_csv_filename' in config:
+                trades_csv_data = generate_csv(HistoricalDataType.TRADES,
+                                               trades_responses)
+                validate_timestamps(trades_csv_data, time_zone, max_time_start,
+                                    min_time_end, max_time_delta)
+                threads.append(
+                    AsyncWriteFileGzip(
+                        trades_csv_data.encode(),
+                        file_prefix + config['trades_csv_filename']))
+                threads[-1].start()
 
     # Wait for files to finish writing async.
     for thread in threads:

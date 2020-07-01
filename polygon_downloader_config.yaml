@@ -1,7 +1,7 @@
 api_key: ''
 response_limit: 50000
 symbols: ['AAPL', 'MSFT']
-date: '2019-01-02'
+dates: ['2019-01-02', '2019-01-03']
 time_zone: 'US/Eastern'
 max_start_hour: 9
 max_start_minute: 35
