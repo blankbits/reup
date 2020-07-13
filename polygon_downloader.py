@@ -188,12 +188,15 @@ def generate_csv(historical_data_type: HistoricalDataType,
                 # (unless this is the first response). This logic discards the
                 # duplicate results.
                 last_result = responses[i - 1].results[-1]
+                # if last_result['t'] == result['t']:
                 if (last_result['t'] == result['t']
                         and last_result['q'] == result['q']):
                     pass
                 else:
                     logger.error('No overlap in response timestamps')
-                    sys.exit(1)
+                    logger.error('last_result %s', last_result)
+                    logger.error('result %s', result)
+                    # sys.exit(1)
             else:
                 if historical_data_type is HistoricalDataType.QUOTES:
                     csv_data.append('{},{},{},{},{},{},{},{},{}'.format(
@@ -245,7 +248,7 @@ def validate_timestamps(csv_data: str, time_zone: datetime.tzinfo,
 
     if sum(df.duplicated()) > 0:
         logger.error('Validation failed for duplicates check')
-        sys.exit(1)
+        # sys.exit(1)
 
     if df['time'].iloc[0] > max_time_start:
         logger.error('Validation failed for max_time_start')
