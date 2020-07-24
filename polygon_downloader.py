@@ -188,7 +188,6 @@ def generate_csv(historical_data_type: HistoricalDataType,
                 # (unless this is the first response). This logic discards the
                 # duplicate results.
                 last_result = responses[i - 1].results[-1]
-                # if last_result['t'] == result['t']:
                 if (last_result['t'] == result['t']
                         and last_result['q'] == result['q']):
                     pass
