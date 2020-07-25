@@ -172,42 +172,45 @@ def generate_csv(historical_data_type: HistoricalDataType,
 
     if historical_data_type is HistoricalDataType.QUOTES:
         csv_data = [
-            'timestamp,bid_price,bid_size,bid_exchange,'
-            'ask_price,ask_size,ask_exchange,conditions,indicators'
+            'sequence_number,sip_timestamp,exchange_timestamp,'
+            'bid_price,bid_size,bid_exchange,ask_price,ask_size,ask_exchange,'
+            'conditions,indicators'
         ]
     elif historical_data_type is HistoricalDataType.TRADES:
-        csv_data = ['timestamp,price,size,exchange,conditions']
+        csv_data = [
+            'sequence_number,sip_timestamp,exchange_timestamp,'
+            'price,size,exchange,conditions'
+        ]
 
     logger.info('Generating CSV | historical_data_type: %s',
                 historical_data_type.name)
     for i, response in enumerate(responses):
         for j, result in enumerate(response.results):
+            # Remove duplicate rows from the end of the previous result, i.e.
+            # all rows which have the same SIP timestamp as the first row of
+            # this result.
             if i > 0 and j == 0:
-                # Due to API behavior, the first result for the current response
-                # is identical to the last result of the previous response
-                # (unless this is the first response). This logic discards the
-                # duplicate results.
-                last_result = responses[i - 1].results[-1]
-                # if last_result['t'] == result['t']:
-                if (last_result['t'] == result['t']
-                        and last_result['q'] == result['q']):
-                    pass
-                else:
-                    logger.error('No overlap in response timestamps')
-                    logger.error('last_result %s', last_result)
-                    logger.error('result %s', result)
-                    # sys.exit(1)
-            else:
-                if historical_data_type is HistoricalDataType.QUOTES:
-                    csv_data.append('{},{},{},{},{},{},{},{},{}'.format(
-                        result['t'], result['p'], result['s'], result['x'],
-                        result['P'], result['S'], result['X'],
-                        ' '.join(map(str, result.get('c', []))),
-                        ' '.join(map(str, result.get('i', [])))))
-                elif historical_data_type is HistoricalDataType.TRADES:
-                    csv_data.append('{},{},{},{},{}'.format(
-                        result['t'], result['p'], result['s'], result['x'],
-                        ' '.join(map(str, result.get('c', [])))))
+                k = -1
+                while True:
+                    last_result = responses[i - 1].results[k]
+                    if last_result['t'] == result['t']:
+                        duplicate_row = csv_data.pop()
+                        logger.info('Removing duplicate row | %s',
+                                    duplicate_row)
+                        k -= 1
+                    else:
+                        break
+            if historical_data_type is HistoricalDataType.QUOTES:
+                csv_data.append('{},{},{},{},{},{},{},{},{},{},{}'.format(
+                    result['q'], result['t'], result['y'], result['p'],
+                    result['s'], result['x'], result['P'], result['S'],
+                    result['X'], ' '.join(map(str, result.get('c', []))),
+                    ' '.join(map(str, result.get('i', [])))))
+            elif historical_data_type is HistoricalDataType.TRADES:
+                csv_data.append('{},{},{},{},{},{},{}'.format(
+                    result['q'], result['t'], result['y'], result['p'],
+                    result['s'], result['x'],
+                    ' '.join(map(str, result.get('c', [])))))
 
     return '\n'.join(csv_data) + '\n'
 
@@ -234,21 +237,21 @@ def validate_timestamps(csv_data: str, time_zone: datetime.tzinfo,
     # Create dataframe from CSV timestamps.
     logger.info('Validating CSV timestamps')
     df = pd.read_csv(io.StringIO(csv_data),
-                     usecols=['timestamp'],
-                     dtype={'timestamp': 'int64'})
+                     usecols=['sip_timestamp'],
+                     dtype={'sip_timestamp': 'int64'})
 
     # Populate helper columns.
     df['datetime'] = [
         datetime.datetime.fromtimestamp(t, time_zone)
-        for t in df['timestamp'] / 10.0**9
+        for t in df['sip_timestamp'] / 10.0**9
     ]
     df['time'] = [t.time() for t in df['datetime']]
     df['timedelta'] = (df['datetime'] - df['datetime'].shift()).fillna(
         pd.Timedelta(0))
 
-    if sum(df.duplicated()) > 0:
-        logger.error('Validation failed for duplicates check')
-        # sys.exit(1)
+    # if sum(df.duplicated()) > 0:
+    #     logger.error('Validation failed for duplicates check')
+    #     sys.exit(1)
 
     if df['time'].iloc[0] > max_time_start:
         logger.error('Validation failed for max_time_start')
