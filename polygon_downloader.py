@@ -269,29 +269,36 @@ def validate_timestamps(csv_data: str, time_zone: datetime.tzinfo,
         sys.exit(1)
 
 
-def load_config() -> dict:
-    """ Load config from YAML file.
+def main_local() -> None:
+    """ Start execution when running locally.
 
     """
-    # Parse command line args and load config.
+    # Parse command line args.
     parser = argparse.ArgumentParser()
     parser.add_argument('--config_file',
                         metavar='FILE',
                         help='config YAML',
                         default='polygon_downloader_config.yaml')
+    parser.add_argument('--secrets_file',
+                        metavar='FILE',
+                        help='secrets YAML',
+                        default='polygon_downloader_secrets.yaml')
     args = parser.parse_args()
+
+    # Load YAML files into dicts.
     with open(args.config_file, 'r') as config_file:
         config = yaml.safe_load(config_file.read())
+    with open(args.secrets_file, 'r') as secrets_file:
+        secrets = yaml.safe_load(secrets_file.read())
 
-    return config
+    main_common(config, secrets)
 
 
-def main():
-    """Begin executing main logic of the script.
+def main_common(config: dict, secrets: dict) -> None:
+    """Start execution of common script logic.
 
     """
-    # Load config and setup logger.
-    config = load_config()
+    # Initialize logger.
     logging.config.dictConfig(config['logging'])
 
     # Initialize date and time variables from config.
@@ -309,7 +316,7 @@ def main():
     for date in config['dates']:
         for symbol in config['symbols']:
             # Populate file prefix and make new directories as needed.
-            file_prefix = '/'.join([config['download_path'], date, symbol
+            file_prefix = '/'.join([config['download_location'], date, symbol
                                     ]) + '/'
             make_directory(file_prefix)
 
@@ -317,7 +324,7 @@ def main():
             if ('quotes_responses_filename' in config
                     or 'quotes_csv_filename' in config):
                 quotes_responses = fetch_responses(HistoricalDataType.QUOTES,
-                                                   config['api_key'],
+                                                   secrets['api_key'],
                                                    config['response_limit'],
                                                    symbol, date)
 
@@ -345,7 +352,7 @@ def main():
             if ('trades_responses_filename' in config
                     or 'trades_csv_filename' in config):
                 trades_responses = fetch_responses(HistoricalDataType.TRADES,
-                                                   config['api_key'],
+                                                   secrets['api_key'],
                                                    config['response_limit'],
                                                    symbol, date)
 
@@ -375,4 +382,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    main_local()
