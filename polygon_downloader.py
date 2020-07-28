@@ -22,10 +22,20 @@ import pickle
 import sys
 import threading
 
+import boto3
+import botocore
 import pandas as pd
 import polygon
 import pytz
 import yaml
+
+
+class EnvironmentType(enum.Enum):
+    """Enum for the type of execution environment.
+
+    """
+    LOCAL = enum.auto()
+    LAMBDA = enum.auto()
 
 
 class HistoricalDataType(enum.Enum):
@@ -37,61 +47,88 @@ class HistoricalDataType(enum.Enum):
 
 
 class AsyncWriteFileGzip(threading.Thread):
-    """Writes and gzips a file on a separate thread.
+    """Gzips and writes a file on a separate thread.
 
     """
-    def __init__(self, data: bytes, path: str) -> None:
-        """Initialize the data and path to write.
+    def __init__(self, environment_type: EnvironmentType, data: bytes,
+                 relative_path: str) -> None:
+        """Initialize the environment, data, and relative path to write.
 
         Args:
+            environment_type: Enum indicating how data should be written.
             data: Data to write.
-            path: Path to write.
+            relative_path: Relative path to write. Does not support single or
+                double dots.
 
         """
         threading.Thread.__init__(self)
+        self._environment_type = environment_type
         self._data = data
-        self._path = path
+        self._relative_path = relative_path
 
     def run(self) -> None:
-        """Write and gzip file.
+        """Gzip file and write to either local filesystem or S3 bucket depending
+        on environment.
 
         Raises:
-            SystemExit: An error occurred when trying to write the file.
+            OSError: An error occurred when trying to write to the local
+                filesystem.
+            botocore.exceptions.ClientError: An error occurred when trying to
+                write to an S3 bucket.
 
         """
         logger = logging.getLogger(__name__)
-        try:
-            logger.info('Writing file | path: %s', self._path)
-            with gzip.open(self._path, 'wb') as file_object:
-                file_object.write(self._data)
-        except OSError:
-            logger.error('Write failed')
-            sys.exit(1)
+        if self._environment_type is EnvironmentType.LOCAL:
+            try:
+                logger.info('Writing local file | relative_path: %s',
+                            self._relative_path)
+                with gzip.open(self._relative_path, 'wb') as file_object:
+                    file_object.write(self._data)
+            except OSError as exception:
+                logger.error('Local file write failed')
+                raise exception
+        elif self._environment_type is EnvironmentType.LAMBDA:
+            # The first directory in the relative path is used as the s3 bucket
+            # name when running in Lambda.
+            s3_bucket = self._relative_path.split('/')[0]
+            s3_key = '/'.join(self._relative_path.split('/')[1:])
+            s3_client = boto3.client('s3')
+            try:
+                logger.info(
+                    'Writing S3 object | %s',
+                    's3_bucket: {}, s3_key: {}'.format(s3_bucket, s3_key))
+                s3_client.put_object(Body=self._data,
+                                     Bucket=s3_bucket,
+                                     Key=s3_key)
+            except botocore.exceptions.ClientError as exception:
+                logger.error('S3 object write failed')
+                raise exception
 
 
-def make_directory(path: str) -> None:
+def make_directory(relative_path: str) -> None:
     """Make a new directory if it doesn't exist, and also make any parent
     directories that don't exist.
 
-    Args:
-        path: Directory path.
+    Args:n
+        relative_path: Relative path to directory. Does not support single or
+            double dots.
 
     Raises:
-        SystemExit: An error occurred when trying to make a directory.
+        OSError: An error occurred when trying to make a directory.
 
     """
     logger = logging.getLogger(__name__)
 
-    directories = list(filter(None, path.split('/')))
+    directories = list(filter(None, relative_path.split('/')))
     for i, _ in enumerate(directories):
         local_path = '/'.join(directories[:(i + 1)])
         if not os.path.exists(local_path):
             try:
-                logger.info('Making directory | path: %s', local_path)
+                logger.info('Making directory | local_path: %s', local_path)
                 os.makedirs(local_path)
-            except OSError:
+            except OSError as exception:
                 logger.error('Make directory failed')
-                sys.exit(1)
+                raise exception
 
 
 def fetch_responses(historical_data_type: HistoricalDataType, api_key: str,
@@ -163,9 +200,6 @@ def generate_csv(historical_data_type: HistoricalDataType,
 
     Returns:
         CSV-formatted string.
-
-    Raises:
-        SystemExit: Unexpected lack of overlap between API responses.
 
     """
     logger = logging.getLogger(__name__)
@@ -291,10 +325,11 @@ def main_local() -> None:
     with open(args.secrets_file, 'r') as secrets_file:
         secrets = yaml.safe_load(secrets_file.read())
 
-    main_common(config, secrets)
+    main_common(EnvironmentType.LOCAL, config, secrets)
 
 
-def main_common(config: dict, secrets: dict) -> None:
+def main_common(environment_type: EnvironmentType, config: dict,
+                secrets: dict) -> None:
     """Start execution of common script logic.
 
     """
@@ -332,7 +367,7 @@ def main_common(config: dict, secrets: dict) -> None:
             if 'quotes_responses_filename' in config:
                 threads.append(
                     AsyncWriteFileGzip(
-                        pickle.dumps(quotes_responses),
+                        environment_type, pickle.dumps(quotes_responses),
                         file_prefix + config['quotes_responses_filename']))
                 threads[-1].start()
 
@@ -344,7 +379,7 @@ def main_common(config: dict, secrets: dict) -> None:
                                     min_time_end, max_time_delta)
                 threads.append(
                     AsyncWriteFileGzip(
-                        quotes_csv_data.encode(),
+                        environment_type, quotes_csv_data.encode(),
                         file_prefix + config['quotes_csv_filename']))
                 threads[-1].start()
 
@@ -360,7 +395,7 @@ def main_common(config: dict, secrets: dict) -> None:
             if 'trades_responses_filename' in config:
                 threads.append(
                     AsyncWriteFileGzip(
-                        pickle.dumps(trades_responses),
+                        environment_type, pickle.dumps(trades_responses),
                         file_prefix + config['trades_responses_filename']))
                 threads[-1].start()
 
@@ -372,7 +407,7 @@ def main_common(config: dict, secrets: dict) -> None:
                                     min_time_end, max_time_delta)
                 threads.append(
                     AsyncWriteFileGzip(
-                        trades_csv_data.encode(),
+                        environment_type, trades_csv_data.encode(),
                         file_prefix + config['trades_csv_filename']))
                 threads[-1].start()
 
