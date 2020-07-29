@@ -3,11 +3,11 @@
 Polygon, does some basic validation, and dumps both the raw API responses and
 CSV formatted data to disk.
 
-It defaults to using the config specified in polygon_downloader_config.yaml, but
+It defaults to using the config specified in polygon_download_config.yaml, but
 this can be overridden via a command line arg.
 
 Example:
-    ./polygon_downloader.py --config_file custom_config.yaml
+    ./polygon_download.py --config_file custom_config.yaml
 
 """
 import argparse
@@ -312,11 +312,11 @@ def main_local() -> None:
     parser.add_argument('--config_file',
                         metavar='FILE',
                         help='config YAML',
-                        default='polygon_downloader_config.yaml')
+                        default='polygon_download_config.yaml')
     parser.add_argument('--secrets_file',
                         metavar='FILE',
                         help='secrets YAML',
-                        default='polygon_downloader_secrets.yaml')
+                        default='polygon_download_secrets.yaml')
     args = parser.parse_args()
 
     # Load YAML files into dicts.
@@ -326,6 +326,21 @@ def main_local() -> None:
         secrets = yaml.safe_load(secrets_file.read())
 
     main_common(EnvironmentType.LOCAL, config, secrets)
+
+
+# TODO: Add type hint for context.
+def main_lambda(event: dict, context) -> None:
+    """ Start execution when running on AWS Lambda.
+
+    """
+    # Load config from Lambda event.
+    config = event['polygon_download_config']
+
+    # Load secrets from deployed YAML file.
+    with open('polygon_download_secrets.yaml', 'r') as secrets_file:
+        secrets = yaml.safe_load(secrets_file.read())
+
+    main_common(EnvironmentType.LAMBDA, config, secrets)
 
 
 def main_common(environment_type: EnvironmentType, config: dict,
@@ -353,7 +368,8 @@ def main_common(environment_type: EnvironmentType, config: dict,
             # Populate file prefix and make new directories as needed.
             file_prefix = '/'.join([config['download_location'], date, symbol
                                     ]) + '/'
-            make_directory(file_prefix)
+            if environment_type is EnvironmentType.LOCAL:
+                make_directory(file_prefix)
 
             # Fetch raw quotes API responses if needed for writing files.
             if ('quotes_responses_filename' in config
