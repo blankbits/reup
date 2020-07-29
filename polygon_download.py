@@ -97,7 +97,7 @@ class AsyncWriteFileGzip(threading.Thread):
                 logger.info(
                     'Writing S3 object | %s',
                     's3_bucket: {}, s3_key: {}'.format(s3_bucket, s3_key))
-                s3_client.put_object(Body=self._data,
+                s3_client.put_object(Body=gzip.compress(self._data),
                                      Bucket=s3_bucket,
                                      Key=s3_key)
             except botocore.exceptions.ClientError as exception:
