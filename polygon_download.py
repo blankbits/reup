@@ -131,10 +131,11 @@ def make_directory(relative_path: str) -> None:
                 raise exception
 
 
-def fetch_responses(historical_data_type: HistoricalDataType, api_key: str,
-                    response_limit: int, symbol: str, date: str) -> list:
+def fetch_csv_data(historical_data_type: HistoricalDataType, api_key: str,
+                   response_limit: int, symbol: str, date: str) -> list:
     """Use the REST API to get historical data, querying as many times as needed
-    to get all the data for a single symbol and date.
+    to get all the data for a single symbol and date. Iteratively append to CSV
+    for each response.
 
     Args:
         historical_data_type: Enum indicating which type of data to fetch.
@@ -144,66 +145,18 @@ def fetch_responses(historical_data_type: HistoricalDataType, api_key: str,
         date: YYYY-MM-DD format.
 
     Returns:
-        List of the raw API responses.
+        CSV-formatted string.
 
     Raises:
         SystemExit: An API call wasn't successful.
 
     """
     logger = logging.getLogger(__name__)
-    responses = []
-    min_timestamp = 0
     client = polygon.RESTClient(api_key)
+    min_timestamp = 0
+    last_response = None
 
-    while True:
-        logger.info(
-            'Fetching responses | %s', 'historical_data_type: {}, ticker: {}'
-            ', date: {}, timestamp: {}, limit: {}'.format(
-                historical_data_type.name, symbol, date, min_timestamp,
-                response_limit))
-
-        if historical_data_type is HistoricalDataType.QUOTES:
-            responses.append(
-                client.historic_n___bbo_quotes_v2(ticker=symbol,
-                                                  date=date,
-                                                  timestamp=min_timestamp,
-                                                  limit=response_limit))
-        elif historical_data_type is HistoricalDataType.TRADES:
-            responses.append(
-                client.historic_trades_v2(ticker=symbol,
-                                          date=date,
-                                          timestamp=min_timestamp,
-                                          limit=response_limit))
-
-        if not responses[-1].success:
-            logger.error('Fetch failed')
-            sys.exit(1)
-
-        logger.info('Fetch succeeded | %s',
-                    'results_count: {}'.format(responses[-1].results_count))
-        if responses[-1].results_count < response_limit:
-            break
-
-        min_timestamp = responses[-1].results[-1]['t']
-
-    return responses
-
-
-def generate_csv(historical_data_type: HistoricalDataType,
-                 responses: list) -> str:
-    """Convert the raw API responses for historical data into CSV format,
-    discarding extraneous data.
-
-    Args:
-        historical_data_type: Enum indicating the type of responses.
-        responses: Raw API responses for a single symbol and date.
-
-    Returns:
-        CSV-formatted string.
-
-    """
-    logger = logging.getLogger(__name__)
-
+    # Initialize CSV with header.
     if historical_data_type is HistoricalDataType.QUOTES:
         csv_data = [
             'sequence_number,sip_timestamp,exchange_timestamp,'
@@ -216,22 +169,47 @@ def generate_csv(historical_data_type: HistoricalDataType,
             'price,size,exchange,conditions'
         ]
 
-    logger.info('Generating CSV | historical_data_type: %s',
-                historical_data_type.name)
-    for i, response in enumerate(responses):
-        for j, result in enumerate(response.results):
+
+    while True:
+        # Fetch response from Polygon API, and exit on failure.
+        logger.info(
+            'Fetching responses | %s', 'historical_data_type: {}, ticker: {}'
+            ', date: {}, timestamp: {}, limit: {}'.format(
+                historical_data_type.name, symbol, date, min_timestamp,
+                response_limit))
+        if historical_data_type is HistoricalDataType.QUOTES:
+            response = client.historic_n___bbo_quotes_v2(
+                ticker=symbol,
+                date=date,
+                timestamp=min_timestamp,
+                limit=response_limit)
+        elif historical_data_type is HistoricalDataType.TRADES:
+            response =  client.historic_trades_v2(
+                ticker=symbol,
+                date=date,
+                timestamp=min_timestamp,
+                limit=response_limit)
+        if not response.success:
+            logger.error('Fetch failed')
+            sys.exit(1)
+
+        logger.info('Fetch succeeded | %s',
+                    'results_count: {}'.format(response.results_count))
+
+        # Add row to CSV for each unique result.
+        for i, result in enumerate(response.results):
             # Remove duplicate rows from the end of the previous result, i.e.
             # all rows which have the same SIP timestamp as the first row of
             # this result.
-            if i > 0 and j == 0:
-                k = -1
+            if i == 0 and last_response is not None:
+                j = -1
                 while True:
-                    last_result = responses[i - 1].results[k]
+                    last_result = last_response.results[j]
                     if last_result['t'] == result['t']:
                         duplicate_row = csv_data.pop()
                         logger.info('Removing duplicate row | %s',
                                     duplicate_row)
-                        k -= 1
+                        j -= 1
                     else:
                         break
             if historical_data_type is HistoricalDataType.QUOTES:
@@ -245,6 +223,14 @@ def generate_csv(historical_data_type: HistoricalDataType,
                     result['q'], result['t'], result['y'], result['p'],
                     result['s'], result['x'],
                     ' '.join(map(str, result.get('c', [])))))
+
+        # Loop until a response is received with fewer results than the maximum.
+        if response.results_count < response_limit:
+            break
+
+        # Update state for next iteration.
+        min_timestamp = response.results[-1]['t']
+        last_response = response
 
     return '\n'.join(csv_data) + '\n'
 
@@ -367,30 +353,16 @@ def main_common(environment_type: EnvironmentType, config: dict,
         for symbol in config['symbols']:
             # Populate file prefix and make new directories as needed.
             file_prefix = '/'.join([config['download_location'], date, symbol
-                                    ]) + '/'
+            ]) + '/'
             if environment_type is EnvironmentType.LOCAL:
                 make_directory(file_prefix)
 
-            # Fetch raw quotes API responses if needed for writing files.
-            if ('quotes_responses_filename' in config
-                    or 'quotes_csv_filename' in config):
-                quotes_responses = fetch_responses(HistoricalDataType.QUOTES,
-                                                   secrets['api_key'],
-                                                   config['response_limit'],
-                                                   symbol, date)
-
-            # Write raw quotes API responses to file.
-            if 'quotes_responses_filename' in config:
-                threads.append(
-                    AsyncWriteFileGzip(
-                        environment_type, pickle.dumps(quotes_responses),
-                        file_prefix + config['quotes_responses_filename']))
-                threads[-1].start()
-
-            # Generate quotes CSV from responses, validate, and write to file.
+            # Fetch quotes CSV, validate, and write to file.
             if 'quotes_csv_filename' in config:
-                quotes_csv_data = generate_csv(HistoricalDataType.QUOTES,
-                                               quotes_responses)
+                quotes_csv_data = fetch_csv_data(HistoricalDataType.QUOTES,
+                                                 secrets['api_key'],
+                                                 config['response_limit'],
+                                                 symbol, date)
                 validate_timestamps(quotes_csv_data, time_zone, max_time_start,
                                     min_time_end, max_time_delta)
                 threads.append(
@@ -399,26 +371,12 @@ def main_common(environment_type: EnvironmentType, config: dict,
                         file_prefix + config['quotes_csv_filename']))
                 threads[-1].start()
 
-            # Fetch raw trades API responses if needed for writing files.
-            if ('trades_responses_filename' in config
-                    or 'trades_csv_filename' in config):
-                trades_responses = fetch_responses(HistoricalDataType.TRADES,
-                                                   secrets['api_key'],
-                                                   config['response_limit'],
-                                                   symbol, date)
-
-            # Write raw trades API responses to file.
-            if 'trades_responses_filename' in config:
-                threads.append(
-                    AsyncWriteFileGzip(
-                        environment_type, pickle.dumps(trades_responses),
-                        file_prefix + config['trades_responses_filename']))
-                threads[-1].start()
-
-            # Generate trades CSV from responses, validate, and write to file.
+            # Fetch trades CSV, validate, and write to file.
             if 'trades_csv_filename' in config:
-                trades_csv_data = generate_csv(HistoricalDataType.TRADES,
-                                               trades_responses)
+                trades_csv_data = fetch_csv_data(HistoricalDataType.TRADES,
+                                                 secrets['api_key'],
+                                                 config['response_limit'],
+                                                 symbol, date)
                 validate_timestamps(trades_csv_data, time_zone, max_time_start,
                                     min_time_end, max_time_delta)
                 threads.append(

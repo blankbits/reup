@@ -14,9 +14,7 @@
         "max_delta_minutes": 5,
         "response_limit": 50000,
         "download_location": "reup/polygon",
-        "quotes_responses_filename": "quotes.responses.gz",
         "quotes_csv_filename": "quotes.csv.gz",
-        "trades_responses_filename": "trades.responses.gz",
         "trades_csv_filename": "trades.csv.gz",
         "logging": {
             "version": 1,

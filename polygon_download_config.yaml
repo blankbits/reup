@@ -10,9 +10,7 @@ response_limit: 50000
 
 # Comment out the filename lines to skip writing the respective files.
 download_location: 'data'
-quotes_responses_filename: 'quotes.responses.gz'
 quotes_csv_filename: 'quotes.csv.gz'
-trades_responses_filename: 'trades.responses.gz'
 trades_csv_filename: 'trades.csv.gz'
 
 # Passed through to logging.config.dictConfig(config).
