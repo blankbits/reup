@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""Contains a main function which downloads historical quote and trade data from
-Polygon, does some basic validation, and dumps both the raw API responses and
-CSV formatted data to disk.
+"""Downloads historical quote and trade data from Polygon, does some basic
+validation, and writes CSV-formatted data to file. This can be run either on a
+local machine or on AWS Lambda.
 
-It defaults to using the config specified in polygon_download_config.yaml, but
-this can be overridden via a command line arg.
+Behavior is determined by config passed either as a YAML file or as an
+AWS Lambda event, and by a secrets YAML file containing the Polygon API key.
 
 Example:
-    ./polygon_download.py --config_file custom_config.yaml
+    ./polygon_download.py --config_file config.yaml --secrets_file secrets.yaml
 
 """
 import argparse
@@ -18,7 +18,6 @@ import io
 import logging
 import logging.config
 import os
-import pickle
 import sys
 import threading
 
@@ -35,7 +34,7 @@ class EnvironmentType(enum.Enum):
 
     """
     LOCAL = enum.auto()
-    LAMBDA = enum.auto()
+    AWS_LAMBDA = enum.auto()
 
 
 class HistoricalDataType(enum.Enum):
@@ -55,7 +54,7 @@ class AsyncWriteFileGzip(threading.Thread):
         """Initialize the environment, data, and relative path to write.
 
         Args:
-            environment_type: Enum indicating how data should be written.
+            environment_type: Enum indicating where data should be written.
             data: Data to write.
             relative_path: Relative path to write. Does not support single or
                 double dots.
@@ -67,7 +66,7 @@ class AsyncWriteFileGzip(threading.Thread):
         self._relative_path = relative_path
 
     def run(self) -> None:
-        """Gzip file and write to either local filesystem or S3 bucket depending
+        """Gzip and write file to either local filesystem or S3 bucket depending
         on environment.
 
         Raises:
@@ -87,9 +86,9 @@ class AsyncWriteFileGzip(threading.Thread):
             except OSError as exception:
                 logger.error('Local file write failed')
                 raise exception
-        elif self._environment_type is EnvironmentType.LAMBDA:
-            # The first directory in the relative path is used as the s3 bucket
-            # name when running in Lambda.
+        elif self._environment_type is EnvironmentType.AWS_LAMBDA:
+            # The first directory in the relative path is used as the S3 bucket
+            # name when running on AWS Lambda.
             s3_bucket = self._relative_path.split('/')[0]
             s3_key = '/'.join(self._relative_path.split('/')[1:])
             s3_client = boto3.client('s3')
@@ -109,7 +108,7 @@ def make_directory(relative_path: str) -> None:
     """Make a new directory if it doesn't exist, and also make any parent
     directories that don't exist.
 
-    Args:n
+    Args:
         relative_path: Relative path to directory. Does not support single or
             double dots.
 
@@ -132,7 +131,7 @@ def make_directory(relative_path: str) -> None:
 
 
 def fetch_csv_data(historical_data_type: HistoricalDataType, api_key: str,
-                   response_limit: int, symbol: str, date: str) -> list:
+                   response_limit: int, symbol: str, date: str) -> str:
     """Use the REST API to get historical data, querying as many times as needed
     to get all the data for a single symbol and date. Iteratively append to CSV
     for each response.
@@ -169,7 +168,6 @@ def fetch_csv_data(historical_data_type: HistoricalDataType, api_key: str,
             'price,size,exchange,conditions'
         ]
 
-
     while True:
         # Fetch response from Polygon API, and exit on failure.
         logger.info(
@@ -184,11 +182,10 @@ def fetch_csv_data(historical_data_type: HistoricalDataType, api_key: str,
                 timestamp=min_timestamp,
                 limit=response_limit)
         elif historical_data_type is HistoricalDataType.TRADES:
-            response =  client.historic_trades_v2(
-                ticker=symbol,
-                date=date,
-                timestamp=min_timestamp,
-                limit=response_limit)
+            response = client.historic_trades_v2(ticker=symbol,
+                                                 date=date,
+                                                 timestamp=min_timestamp,
+                                                 limit=response_limit)
         if not response.success:
             logger.error('Fetch failed')
             sys.exit(1)
@@ -224,7 +221,7 @@ def fetch_csv_data(historical_data_type: HistoricalDataType, api_key: str,
                     result['s'], result['x'],
                     ' '.join(map(str, result.get('c', [])))))
 
-        # Loop until a response is received with fewer results than the maximum.
+        # Loop until a response is received with fewer results than the max.
         if response.results_count < response_limit:
             break
 
@@ -269,10 +266,6 @@ def validate_timestamps(csv_data: str, time_zone: datetime.tzinfo,
     df['timedelta'] = (df['datetime'] - df['datetime'].shift()).fillna(
         pd.Timedelta(0))
 
-    # if sum(df.duplicated()) > 0:
-    #     logger.error('Validation failed for duplicates check')
-    #     sys.exit(1)
-
     if df['time'].iloc[0] > max_time_start:
         logger.error('Validation failed for max_time_start')
         sys.exit(1)
@@ -314,24 +307,36 @@ def main_local() -> None:
     main_common(EnvironmentType.LOCAL, config, secrets)
 
 
-# TODO: Add type hint for context.
-def main_lambda(event: dict, context) -> None:
+def main_aws_lambda(event: dict, context) -> None:
     """ Start execution when running on AWS Lambda.
 
+    Args:
+        event: AWS Lambda event provided by environment.
+        context: AWS Lambda context provided by environment. This is not used,
+            and doesn't have a type hint to avoid unnecessary complexity.
+
     """
-    # Load config from Lambda event.
+    # pylint: disable=unused-argument
+
+    # Load config from AWS Lambda event.
     config = event['polygon_download_config']
 
     # Load secrets from deployed YAML file.
     with open('polygon_download_secrets.yaml', 'r') as secrets_file:
         secrets = yaml.safe_load(secrets_file.read())
 
-    main_common(EnvironmentType.LAMBDA, config, secrets)
+    main_common(EnvironmentType.AWS_LAMBDA, config, secrets)
 
 
 def main_common(environment_type: EnvironmentType, config: dict,
                 secrets: dict) -> None:
     """Start execution of common script logic.
+
+    Args:
+        environment_type: Enum indicating execution environment.
+        config: Config determining what data to fetch, where to write it,
+            logging format, and other behavior.
+        secrets: Contains Polygon API key.
 
     """
     # Initialize logger.
@@ -353,7 +358,7 @@ def main_common(environment_type: EnvironmentType, config: dict,
         for symbol in config['symbols']:
             # Populate file prefix and make new directories as needed.
             file_prefix = '/'.join([config['download_location'], date, symbol
-            ]) + '/'
+                                    ]) + '/'
             if environment_type is EnvironmentType.LOCAL:
                 make_directory(file_prefix)
 
