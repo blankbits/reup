@@ -38,7 +38,7 @@ class EnvironmentType(enum.Enum):
 
 
 class HistoricalDataType(enum.Enum):
-    """Enum for the type of historical data being handled.
+    """Enum for the type of historical data.
 
     """
     QUOTES = enum.auto()
@@ -130,11 +130,77 @@ def make_directory(relative_path: str) -> None:
                 raise exception
 
 
+def get_csv_header(historical_data_type: HistoricalDataType) -> str:
+    """Generate a CSV header.
+
+    Args:
+        historical_data_type: Enum for the type of historical data.
+
+    Returns:
+        CSV-formatted string.
+
+    """
+    if historical_data_type is HistoricalDataType.QUOTES:
+        csv_header = ('sequence_number,sip_timestamp,exchange_timestamp,'
+                      'bid_price,bid_size,bid_exchange,'
+                      'ask_price,ask_size,ask_exchange,'
+                      'conditions,indicators')
+    elif historical_data_type is HistoricalDataType.TRADES:
+        csv_header = ('sequence_number,sip_timestamp,exchange_timestamp,'
+                      'price,size,exchange,conditions')
+
+    return csv_header
+
+
+def append_csv_rows(historical_data_type: HistoricalDataType,
+                    csv_strings: list, results, last_results) -> None:
+    """Add a CSV row for each unique result, and remove duplicate rows as needed
+    from the previous result set. This function modifies the csv_strings object.
+
+    Args:
+        historical_data_type: Enum for the type of historical data.
+        csv_strings: List of CSV rows to append.
+        results: List of raw API results. Doesn't have a type hint as type
+            is defined by Polygon.
+        last_results: List of raw API results from the previous response.
+            Doesn't have a type hint as type is defined by Polygon.
+
+    """
+    logger = logging.getLogger(__name__)
+
+    for i, result in enumerate(results):
+        # Remove duplicate rows from the end of the last result set, i.e.
+        # all rows which have the same SIP timestamp as the first row of
+        # this result set.
+        if i == 0 and last_results is not None:
+            j = -1
+            while True:
+                trailing_result = last_results[j]
+                if trailing_result['t'] == result['t']:
+                    duplicate_row = csv_strings.pop()
+                    logger.info('Removing duplicate row | %s', duplicate_row)
+                    j -= 1
+                else:
+                    break
+
+        if historical_data_type is HistoricalDataType.QUOTES:
+            csv_strings.append('{},{},{},{},{},{},{},{},{},{},{}'.format(
+                result['q'], result['t'], result['y'], result['p'],
+                result['s'], result['x'], result['P'], result['S'],
+                result['X'], ' '.join(map(str, result.get('c', []))),
+                ' '.join(map(str, result.get('i', [])))))
+        elif historical_data_type is HistoricalDataType.TRADES:
+            csv_strings.append('{},{},{},{},{},{},{}'.format(
+                result['q'], result['t'], result['y'], result['p'],
+                result['s'], result['x'],
+                ' '.join(map(str, result.get('c', [])))))
+
+
 def fetch_csv_data(historical_data_type: HistoricalDataType, api_key: str,
                    response_limit: int, symbol: str, date: str) -> str:
-    """Use the REST API to get historical data, querying as many times as needed
-    to get all the data for a single symbol and date. Iteratively append to CSV
-    for each response.
+    """Use the Polygon API to get historical data, querying as many times as
+    needed to get all the data for a single symbol and date. Iteratively append
+    to CSV for each response.
 
     Args:
         historical_data_type: Enum indicating which type of data to fetch.
@@ -153,20 +219,10 @@ def fetch_csv_data(historical_data_type: HistoricalDataType, api_key: str,
     logger = logging.getLogger(__name__)
     client = polygon.RESTClient(api_key)
     min_timestamp = 0
-    last_response = None
+    last_results = None
 
     # Initialize CSV with header.
-    if historical_data_type is HistoricalDataType.QUOTES:
-        csv_data = [
-            'sequence_number,sip_timestamp,exchange_timestamp,'
-            'bid_price,bid_size,bid_exchange,ask_price,ask_size,ask_exchange,'
-            'conditions,indicators'
-        ]
-    elif historical_data_type is HistoricalDataType.TRADES:
-        csv_data = [
-            'sequence_number,sip_timestamp,exchange_timestamp,'
-            'price,size,exchange,conditions'
-        ]
+    csv_strings = [get_csv_header(historical_data_type)]
 
     while True:
         # Fetch response from Polygon API, and exit on failure.
@@ -193,33 +249,9 @@ def fetch_csv_data(historical_data_type: HistoricalDataType, api_key: str,
         logger.info('Fetch succeeded | %s',
                     'results_count: {}'.format(response.results_count))
 
-        # Add row to CSV for each unique result.
-        for i, result in enumerate(response.results):
-            # Remove duplicate rows from the end of the previous result, i.e.
-            # all rows which have the same SIP timestamp as the first row of
-            # this result.
-            if i == 0 and last_response is not None:
-                j = -1
-                while True:
-                    last_result = last_response.results[j]
-                    if last_result['t'] == result['t']:
-                        duplicate_row = csv_data.pop()
-                        logger.info('Removing duplicate row | %s',
-                                    duplicate_row)
-                        j -= 1
-                    else:
-                        break
-            if historical_data_type is HistoricalDataType.QUOTES:
-                csv_data.append('{},{},{},{},{},{},{},{},{},{},{}'.format(
-                    result['q'], result['t'], result['y'], result['p'],
-                    result['s'], result['x'], result['P'], result['S'],
-                    result['X'], ' '.join(map(str, result.get('c', []))),
-                    ' '.join(map(str, result.get('i', [])))))
-            elif historical_data_type is HistoricalDataType.TRADES:
-                csv_data.append('{},{},{},{},{},{},{}'.format(
-                    result['q'], result['t'], result['y'], result['p'],
-                    result['s'], result['x'],
-                    ' '.join(map(str, result.get('c', [])))))
+        # Add rows to CSV data for the current response.
+        append_csv_rows(historical_data_type, csv_strings, response.results,
+                        last_results)
 
         # Loop until a response is received with fewer results than the max.
         if response.results_count < response_limit:
@@ -227,9 +259,9 @@ def fetch_csv_data(historical_data_type: HistoricalDataType, api_key: str,
 
         # Update state for next iteration.
         min_timestamp = response.results[-1]['t']
-        last_response = response
+        last_results = response.results
 
-    return '\n'.join(csv_data) + '\n'
+    return '\n'.join(csv_strings) + '\n'
 
 
 def validate_timestamps(csv_data: str, time_zone: datetime.tzinfo,
@@ -313,7 +345,7 @@ def main_lambda(event: dict, context) -> None:
     Args:
         event: Lambda event provided by environment.
         context: Lambda context provided by environment. This is not used, and
-            doesn't have a type hint to avoid unnecessary complexity.
+            doesn't have a type hint as type is defined by Lambda.
 
     """
     # pylint: disable=unused-argument
