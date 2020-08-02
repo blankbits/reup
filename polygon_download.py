@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Downloads historical quote and trade data from Polygon, does some basic
 validation, and writes CSV-formatted data to file. This can be run either on a
-local machine or on AWS Lambda.
+local machine or on Lambda.
 
 Behavior is determined by config passed either as a YAML file or as an
-AWS Lambda event, and by a secrets YAML file containing the Polygon API key.
+Lambda event, and by a secrets YAML file containing the Polygon API key.
 
 Example:
     ./polygon_download.py --config_file config.yaml --secrets_file secrets.yaml
@@ -34,7 +34,7 @@ class EnvironmentType(enum.Enum):
 
     """
     LOCAL = enum.auto()
-    AWS_LAMBDA = enum.auto()
+    LAMBDA = enum.auto()
 
 
 class HistoricalDataType(enum.Enum):
@@ -86,9 +86,9 @@ class AsyncWriteFileGzip(threading.Thread):
             except OSError as exception:
                 logger.error('Local file write failed')
                 raise exception
-        elif self._environment_type is EnvironmentType.AWS_LAMBDA:
+        elif self._environment_type is EnvironmentType.LAMBDA:
             # The first directory in the relative path is used as the S3 bucket
-            # name when running on AWS Lambda.
+            # name when running on Lambda.
             s3_bucket = self._relative_path.split('/')[0]
             s3_key = '/'.join(self._relative_path.split('/')[1:])
             s3_client = boto3.client('s3')
@@ -307,25 +307,25 @@ def main_local() -> None:
     main_common(EnvironmentType.LOCAL, config, secrets)
 
 
-def main_aws_lambda(event: dict, context) -> None:
-    """ Start execution when running on AWS Lambda.
+def main_lambda(event: dict, context) -> None:
+    """ Start execution when running on Lambda.
 
     Args:
-        event: AWS Lambda event provided by environment.
-        context: AWS Lambda context provided by environment. This is not used,
-            and doesn't have a type hint to avoid unnecessary complexity.
+        event: Lambda event provided by environment.
+        context: Lambda context provided by environment. This is not used, and
+            doesn't have a type hint to avoid unnecessary complexity.
 
     """
     # pylint: disable=unused-argument
 
-    # Load config from AWS Lambda event.
+    # Load config from Lambda event.
     config = event['polygon_download_config']
 
     # Load secrets from deployed YAML file.
     with open('polygon_download_secrets.yaml', 'r') as secrets_file:
         secrets = yaml.safe_load(secrets_file.read())
 
-    main_common(EnvironmentType.AWS_LAMBDA, config, secrets)
+    main_common(EnvironmentType.LAMBDA, config, secrets)
 
 
 def main_common(environment_type: EnvironmentType, config: dict,
