@@ -3,8 +3,8 @@
 validation, and writes CSV-formatted data to file. This can be run either on a
 local machine or on Lambda.
 
-Behavior is determined by config passed either as a YAML file or as an
-Lambda event, and by a secrets YAML file containing the Polygon API key.
+Behavior is determined by config passed either as a YAML file or as a Lambda
+event, and by a secrets YAML file containing the Polygon API key.
 
 Example:
     ./polygon_download.py --config_file config.yaml --secrets_file secrets.yaml
@@ -54,7 +54,7 @@ class AsyncWriteFileGzip(threading.Thread):
         """Initialize the environment, data, and relative path to write.
 
         Args:
-            environment_type: Enum indicating where data should be written.
+            environment_type: Enum for the type of execution environment.
             data: Data to write.
             relative_path: Relative path to write. Does not support single or
                 double dots.
@@ -203,7 +203,7 @@ def fetch_csv_data(historical_data_type: HistoricalDataType, api_key: str,
     to CSV for each response.
 
     Args:
-        historical_data_type: Enum indicating which type of data to fetch.
+        historical_data_type: Enum for the type of historical data.
         api_key: Polygon-issued API key.
         response_limit: Max records returned per API request.
         symbol: Ticker symbol.
@@ -365,7 +365,7 @@ def main_common(environment_type: EnvironmentType, config: dict,
     """Start execution of common script logic.
 
     Args:
-        environment_type: Enum indicating execution environment.
+        environment_type: Enum for the type of execution environment.
         config: Config determining what data to fetch, where to write it,
             logging format, and other behavior.
         secrets: Contains Polygon API key.
