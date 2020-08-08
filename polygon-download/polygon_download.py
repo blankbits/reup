@@ -323,11 +323,11 @@ def main_local() -> None:
     parser.add_argument('--config_file',
                         metavar='FILE',
                         help='config YAML',
-                        default='polygon_download_config.yaml')
+                        default='config.yaml')
     parser.add_argument('--secrets_file',
                         metavar='FILE',
                         help='secrets YAML',
-                        default='polygon_download_secrets.yaml')
+                        default='secrets.yaml')
     args = parser.parse_args()
 
     # Load YAML files into dicts.
@@ -351,10 +351,10 @@ def main_lambda(event: dict, context) -> None:
     # pylint: disable=unused-argument
 
     # Load config from Lambda event.
-    config = event['polygon_download_config']
+    config = event['polygon_download']
 
     # Load secrets from deployed YAML file.
-    with open('polygon_download_secrets.yaml', 'r') as secrets_file:
+    with open('secrets.yaml', 'r') as secrets_file:
         secrets = yaml.safe_load(secrets_file.read())
 
     main_common(EnvironmentType.LAMBDA, config, secrets)

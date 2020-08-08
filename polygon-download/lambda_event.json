@@ -1,5 +1,5 @@
 {
-    "polygon_download_config": {
+    "polygon_download": {
         "symbols": [
             "SPY"
         ],

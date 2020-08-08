@@ -3,9 +3,9 @@ set -x
 
 # Config.
 third_party_packages="pandas polygon-api-client pytz pyyaml"
-lambda_source_files="polygon_download.py polygon_download_secrets.yaml"
+lambda_source_files="polygon_download.py secrets.yaml"
 lambda_function_name="polygon_download"
-lambda_test_event="polygon_download_event.json"
+lambda_test_event="lambda_event.json"
 
 # Add third party packages to zip.
 python3 -m venv v-env
