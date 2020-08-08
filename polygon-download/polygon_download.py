@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+ #!/usr/bin/env python3
 """Downloads historical quote and trade data from Polygon, does some basic
 validation, and writes CSV-formatted data to file. This can be run either on a
 local machine or on Lambda.
@@ -7,7 +7,7 @@ Behavior is determined by config passed either as a YAML file or as a Lambda
 event, and by a secrets YAML file containing the Polygon API key.
 
 Example:
-    ./polygon_download.py --config_file config.yaml --secrets_file secrets.yaml
+    ./polygon_download.py --config_file polygon_download_config.yaml --secrets_file polygon_download_secrets.yaml
 
 """
 import argparse
@@ -323,11 +323,11 @@ def main_local() -> None:
     parser.add_argument('--config_file',
                         metavar='FILE',
                         help='config YAML',
-                        default='config.yaml')
+                        default='polygon_download_config.yaml')
     parser.add_argument('--secrets_file',
                         metavar='FILE',
                         help='secrets YAML',
-                        default='secrets.yaml')
+                        default='polygon_download_secrets.yaml')
     args = parser.parse_args()
 
     # Load YAML files into dicts.
@@ -354,7 +354,7 @@ def main_lambda(event: dict, context) -> None:
     config = event['polygon_download']
 
     # Load secrets from deployed YAML file.
-    with open('secrets.yaml', 'r') as secrets_file:
+    with open('polygon_download_secrets.yaml', 'r') as secrets_file:
         secrets = yaml.safe_load(secrets_file.read())
 
     main_common(EnvironmentType.LAMBDA, config, secrets)

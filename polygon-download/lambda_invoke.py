@@ -40,6 +40,8 @@ def main() -> None:
 
     # Log response.
     print(response)
+    print(response['ResponseMetadata']['HTTPStatusCode'])
+    print(response['ResponseMetadata']['HTTPStatusCode'] == 202)
 
 
 if __name__ == '__main__':
