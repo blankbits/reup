@@ -6,12 +6,6 @@
         "dates": [
             "2020-01-02"
         ],
-        "time_zone": "US/Eastern",
-        "max_start_hour": 9,
-        "max_start_minute": 35,
-        "min_end_hour": 15,
-        "min_end_minute": 55,
-        "max_delta_minutes": 5,
         "response_limit": 50000,
         "download_location": "reup/polygon",
         "quotes_csv_filename": "quotes.csv.gz",

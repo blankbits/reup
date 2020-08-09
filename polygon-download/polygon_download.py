@@ -1,7 +1,6 @@
- #!/usr/bin/env python3
-"""Downloads historical quote and trade data from Polygon, does some basic
-validation, and writes CSV-formatted data to file. This can be run either on a
-local machine or on Lambda.
+#!/usr/bin/env python3
+"""Downloads historical quote and trade data from Polygon in CSV format. This
+can be run either on a local machine or on Lambda.
 
 Behavior is determined by config passed either as a YAML file or as a Lambda
 event, and by a secrets YAML file containing the Polygon API key.
@@ -12,10 +11,8 @@ Example:
 
 """
 import argparse
-import datetime
 import enum
 import gzip
-import io
 import logging
 import logging.config
 import os
@@ -24,9 +21,7 @@ import threading
 
 import boto3
 import botocore
-import pandas as pd
 import polygon
-import pytz
 import yaml
 
 
@@ -265,56 +260,6 @@ def fetch_csv_data(historical_data_type: HistoricalDataType, api_key: str,
     return '\n'.join(csv_strings) + '\n'
 
 
-def validate_timestamps(csv_data: str, time_zone: datetime.tzinfo,
-                        max_time_start: datetime.time,
-                        min_time_end: datetime.time,
-                        max_time_delta: datetime.timedelta) -> None:
-    """Perform a few sanity checks on the timestamps in CSV data.
-
-    Args:
-        csv_data: CSV-formatted string.
-        time_zone: Time zone for converting Unix time.
-        max_time_start: The latest time the data should begin.
-        min_time_end: The earliest time the data should stop.
-        max_time_delta: The longest time gap that is allowed.
-
-    Raises:
-        SystemExit: Validation failed.
-
-    """
-    logger = logging.getLogger(__name__)
-
-    # Create dataframe from CSV timestamps.
-    logger.info('Validating CSV timestamps')
-    df = pd.read_csv(io.StringIO(csv_data),
-                     usecols=['sip_timestamp'],
-                     dtype={'sip_timestamp': 'int64'})
-
-    # Populate helper columns.
-    df['datetime'] = [
-        datetime.datetime.fromtimestamp(t, time_zone)
-        for t in df['sip_timestamp'] / 10.0**9
-    ]
-    df['time'] = [t.time() for t in df['datetime']]
-    df['timedelta'] = (df['datetime'] - df['datetime'].shift()).fillna(
-        pd.Timedelta(0))
-
-    if df['time'].iloc[0] > max_time_start:
-        logger.error('Validation failed for max_time_start')
-        sys.exit(1)
-
-    if df['time'].iloc[-1] < min_time_end:
-        logger.error('Validation failed for min_time_end')
-        sys.exit(1)
-
-    # Check max time delta, only considering timestamps after max start and
-    # before min end times.
-    if max(df['timedelta'][(df['time'] >= max_time_start)
-                           & (df['time'] <= min_time_end)]) > max_time_delta:
-        logger.error('Validation failed for max_time_delta')
-        sys.exit(1)
-
-
 def main_local() -> None:
     """ Start execution when running locally.
 
@@ -375,14 +320,6 @@ def main_common(environment_type: EnvironmentType, config: dict,
     # Initialize logger.
     logging.config.dictConfig(config['logging'])
 
-    # Initialize date and time variables from config.
-    time_zone = pytz.timezone(config['time_zone'])
-    max_time_start = datetime.time(hour=config['max_start_hour'],
-                                   minute=config['max_start_minute'])
-    min_time_end = datetime.time(hour=config['min_end_hour'],
-                                 minute=config['min_end_minute'])
-    max_time_delta = datetime.timedelta(minutes=config['max_delta_minutes'])
-
     # Threads for writing files async.
     threads = []
 
@@ -401,8 +338,6 @@ def main_common(environment_type: EnvironmentType, config: dict,
                                                  secrets['api_key'],
                                                  config['response_limit'],
                                                  symbol, date)
-                validate_timestamps(quotes_csv_data, time_zone, max_time_start,
-                                    min_time_end, max_time_delta)
                 threads.append(
                     AsyncWriteFileGzip(
                         environment_type, quotes_csv_data.encode(),
@@ -415,8 +350,6 @@ def main_common(environment_type: EnvironmentType, config: dict,
                                                  secrets['api_key'],
                                                  config['response_limit'],
                                                  symbol, date)
-                validate_timestamps(trades_csv_data, time_zone, max_time_start,
-                                    min_time_end, max_time_delta)
                 threads.append(
                     AsyncWriteFileGzip(
                         environment_type, trades_csv_data.encode(),
