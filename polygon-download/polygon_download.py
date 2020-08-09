@@ -7,7 +7,8 @@ Behavior is determined by config passed either as a YAML file or as a Lambda
 event, and by a secrets YAML file containing the Polygon API key.
 
 Example:
-    ./polygon_download.py --config_file polygon_download_config.yaml --secrets_file polygon_download_secrets.yaml
+    ./polygon_download.py --config_file polygon_download_config.yaml \
+        --secrets_file polygon_download_secrets.yaml
 
 """
 import argparse
