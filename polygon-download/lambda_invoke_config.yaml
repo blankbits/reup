@@ -1,10 +1,10 @@
 max_event_count: 50
-sleep_seconds: 300
+sleep_seconds: 180
 symbols: [
   'AAPL', 'MSFT', 'AMZN', 'GOOG', 'GOOGL', 'FB',
   'XLC', 'XLY', 'XLP', 'XLE', 'XLF', 'XLV', 'XLI', 'XLB', 'XLRE', 'XLK', 'XLU',
   'SPY', 'GLD'
-  ]
+]
 dates: [
   '2020-01-02',
   '2020-01-03',
