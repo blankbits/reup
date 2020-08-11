@@ -261,7 +261,7 @@ def fetch_csv_data(historical_data_type: HistoricalDataType, api_key: str,
 
 
 def main_local() -> None:
-    """ Start execution when running locally.
+    """Start execution when running locally.
 
     """
     # Parse command line args.
@@ -286,7 +286,7 @@ def main_local() -> None:
 
 
 def main_lambda(event: dict, context) -> None:
-    """ Start execution when running on Lambda.
+    """Start execution when running on Lambda.
 
     Args:
         event: Lambda event provided by environment.

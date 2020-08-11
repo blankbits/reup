@@ -1,5 +1,5 @@
 max_event_count: 50
-sleep_seconds: 180
+sleep_seconds: 120
 symbols: [
   'AAPL', 'MSFT', 'AMZN', 'GOOG', 'GOOGL', 'FB',
   'XLC', 'XLY', 'XLP', 'XLE', 'XLF', 'XLV', 'XLI', 'XLB', 'XLRE', 'XLK', 'XLU',
