@@ -3,6 +3,7 @@
 
 """
 import gzip
+import json
 import logging
 import logging.config
 import math
@@ -32,8 +33,8 @@ def create_seconds_df(quotes_df: pd.DataFrame,
 
     # Initialize empty data frame with a row for each time series period. For
     # integer fields, Int64 is used instead of int64 since it is nullable.
-    start_time = math.ceil(quotes_df.loc[0, 'sip_timestamp'] / 10.0**9)
-    end_time = math.ceil(quotes_df.loc[len(quotes_df) - 1, 'sip_timestamp'] /
+    start_time = math.ceil(quotes_df.at[0, 'sip_timestamp'] / 10.0**9)
+    end_time = math.ceil(quotes_df.at[len(quotes_df) - 1, 'sip_timestamp'] /
                          10.0**9)
     timestamp_values = np.linspace(start_time, end_time,
                                    int(np.round(end_time - start_time + 1.0)))
@@ -66,33 +67,94 @@ def create_seconds_df(quotes_df: pd.DataFrame,
         pd.Series([], dtype='Int64')
     })
 
-    # Populate dataframe.
+    # Populate data frame.
     quotes_row = 0
     trades_row = 0
+    last_bid_price = pd.NA
+    last_bid_size = pd.NA
+    last_ask_price = pd.NA
+    last_ask_size = pd.NA
     last_trade_price = pd.NA
     for i in range(len(seconds_df)):
-        current_timestamp = seconds_df.loc[i, 'timestamp']
-        while quotes_df.loc[quotes_row,
-                            'sip_timestamp'] / 10.0**9 <= current_timestamp:
-            # TODO: Add aggregation here.
+        current_timestamp = seconds_df.at[i, 'timestamp']
+        vwap = 0.0
+        volume_price_dict = {}
+        volume_total = 0
+        volume_aggressive_buy = 0
+        volume_aggressive_sell = 0
+        message_count_quote = 0
+        message_count_trade = 0
+
+        # Loop through all quote messages in this period.
+        while quotes_df.at[quotes_row,
+                           'sip_timestamp'] / 10.0**9 <= current_timestamp:
+            message_count_quote += 1
             if quotes_row < len(quotes_df) - 1:
                 quotes_row += 1
             else:
                 break
 
-        while trades_df.loc[trades_row,
-                            'sip_timestamp'] / 10.0**9 <= current_timestamp:
-            last_trade_price = trades_df.loc[trades_row, 'price']
+        last_bid_price = quotes_df.at[max(0, quotes_row - 1), 'bid_price']
+        last_bid_size = quotes_df.at[max(0, quotes_row - 1), 'bid_size']
+        last_ask_price = quotes_df.at[max(0, quotes_row - 1), 'ask_price']
+        last_ask_size = quotes_df.at[max(0, quotes_row - 1), 'ask_size']
+
+        # Loop through all trade messages in this period.
+        while trades_df.at[trades_row,
+                           'sip_timestamp'] / 10.0**9 <= current_timestamp:
+            last_trade_price = trades_df.at[trades_row, 'price']
+            last_trade_size = trades_df.at[trades_row, 'size']
+            volume_total += last_trade_size
+            vwap += last_trade_size * last_trade_price
+
+            # Populate volume price dict. Need to cast trade sizes to int in
+            # order for JSON serialization to work.
+            price_key = str(last_trade_price)
+            if price_key in volume_price_dict:
+                volume_price_dict[price_key] += int(last_trade_size)
+            else:
+                volume_price_dict[price_key] = int(last_trade_size)
+
+            if (last_ask_price is not pd.NA and last_trade_price >=
+                    last_ask_price - np.finfo(np.float64).eps):
+                volume_aggressive_buy += last_trade_size
+
+            if (last_bid_price is not pd.NA and last_trade_price <=
+                    last_bid_price + np.finfo(np.float64).eps):
+                volume_aggressive_sell += last_trade_size
+
+            message_count_trade += 1
+
             if trades_row < len(trades_df) - 1:
                 trades_row += 1
             else:
                 break
 
-        seconds_df.loc[i, 'bid_price'] = quotes_df.loc[quotes_row, 'bid_price']
-        seconds_df.loc[i, 'bid_size'] = quotes_df.loc[quotes_row, 'bid_size']
-        seconds_df.loc[i, 'ask_price'] = quotes_df.loc[quotes_row, 'ask_price']
-        seconds_df.loc[i, 'ask_size'] = quotes_df.loc[quotes_row, 'ask_size']
-        seconds_df.loc[i, 'last_trade_price'] = last_trade_price
+        # Divide sum of trade size * price by total volume to calculate vwap.
+        if volume_total > 0:
+            vwap /= volume_total
+        else:
+            vwap = pd.NA
+
+        # Serialize volume_price_dict to CSV-friendly string.
+        if volume_price_dict:
+            volume_price_dict_str = json.dumps(volume_price_dict,
+                                               separators=('|', ':'))
+        else:
+            volume_price_dict_str = ''
+
+        seconds_df.at[i, 'bid_price'] = last_bid_price
+        seconds_df.at[i, 'bid_size'] = last_bid_size
+        seconds_df.at[i, 'ask_price'] = last_ask_price
+        seconds_df.at[i, 'ask_size'] = last_ask_size
+        seconds_df.at[i, 'last_trade_price'] = last_trade_price
+        seconds_df.at[i, 'vwap'] = vwap
+        seconds_df.at[i, 'volume_price_dict'] = volume_price_dict_str
+        seconds_df.at[i, 'volume_total'] = volume_total
+        seconds_df.at[i, 'volume_aggressive_buy'] = volume_aggressive_buy
+        seconds_df.at[i, 'volume_aggressive_sell'] = volume_aggressive_sell
+        seconds_df.at[i, 'message_count_quote'] = message_count_quote
+        seconds_df.at[i, 'message_count_trade'] = message_count_trade
 
     return seconds_df
 
