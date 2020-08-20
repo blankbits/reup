@@ -6,7 +6,7 @@ import gzip
 import logging
 import logging.config
 import math
-import sys
+# import sys
 import uuid
 
 import boto3
@@ -23,7 +23,6 @@ def create_seconds_df(quotes_df: pd.DataFrame,
     Args:
         quotes_df: Data frame of quote messages.
         trades_df: Data frame of trade messages.
-        sample_seconds: Period at which to sample data.
 
     Returns:
         Time series data frame.
@@ -38,8 +37,6 @@ def create_seconds_df(quotes_df: pd.DataFrame,
                          10.0**9)
     timestamp_values = np.linspace(start_time, end_time,
                                    int(np.round(end_time - start_time + 1.0)))
-    # timestamp_values = timestamp_values[
-    #     [i % sample_seconds == 0 for i in range(len(timestamp_values))]]
     seconds_df = pd.DataFrame({
         'timestamp':
         pd.Series(timestamp_values, dtype='float64'),

@@ -4,12 +4,6 @@
         "s3_key_quotes": "polygon/2020-01-02/SPY/quotes.csv.gz",
         "s3_key_trades": "polygon/2020-01-02/SPY/trades.csv.gz",
         "s3_key_output": "polygon_time_series.csv.gz",
-        "time_zone": "US/Eastern",        
-        "start_hour": 9,
-        "start_minute": 0,
-        "end_hour": 16,
-        "end_minute": 0,
-        "sample_seconds": 1,
         "logging": {
             "version": 1,
             "formatters": {
