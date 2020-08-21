@@ -143,24 +143,17 @@ def create_seconds_df(quotes_df: pd.DataFrame,
             message_count_trade += 1
             trades_row += 1
 
-        # Divide sum of trade size * price by total volume to calculate vwap.
-        vwap = pd.NA
-        if volume_total > 0:
-            vwap = price_total / volume_total
-
-        # Serialize volume_price_dict to CSV-friendly string.
-        volume_price_dict_str = ''
-        if volume_price_dict:
-            volume_price_dict_str = json.dumps(volume_price_dict,
-                                               separators=(',', ':'))
-
+        # Populate data frame values for this row.
         seconds_df.at[i, 'bid_price'] = last_value['bid_price']
         seconds_df.at[i, 'bid_size'] = last_value['bid_size']
         seconds_df.at[i, 'ask_price'] = last_value['ask_price']
         seconds_df.at[i, 'ask_size'] = last_value['ask_size']
         seconds_df.at[i, 'last_trade_price'] = last_value['trade_price']
-        seconds_df.at[i, 'vwap'] = vwap
-        seconds_df.at[i, 'volume_price_dict'] = volume_price_dict_str
+        if volume_total > 0:
+            seconds_df.at[i, 'vwap'] = price_total / volume_total
+        if volume_price_dict:
+            seconds_df.at[i,
+                          'volume_price_dict'] = json.dumps(volume_price_dict)
         seconds_df.at[i, 'volume_total'] = volume_total
         seconds_df.at[i, 'volume_aggressive_buy'] = volume_aggressive_buy
         seconds_df.at[i, 'volume_aggressive_sell'] = volume_aggressive_sell
