@@ -95,9 +95,9 @@ def create_seconds_df(quotes_df: pd.DataFrame,
                 break
 
         last_bid_price = quotes_df.at[max(0, quotes_row - 1), 'bid_price']
-        last_bid_size = quotes_df.at[max(0, quotes_row - 1), 'bid_size']
+        last_bid_size = quotes_df.at[max(0, quotes_row - 1), 'bid_size'] * 100
         last_ask_price = quotes_df.at[max(0, quotes_row - 1), 'ask_price']
-        last_ask_size = quotes_df.at[max(0, quotes_row - 1), 'ask_size']
+        last_ask_size = quotes_df.at[max(0, quotes_row - 1), 'ask_size'] * 100
 
         # Loop through all trade messages in this period.
         while trades_df.at[trades_row,
@@ -139,7 +139,7 @@ def create_seconds_df(quotes_df: pd.DataFrame,
         # Serialize volume_price_dict to CSV-friendly string.
         if volume_price_dict:
             volume_price_dict_str = json.dumps(volume_price_dict,
-                                               separators=('|', ':'))
+                                               separators=(',', ':'))
         else:
             volume_price_dict_str = ''
 
