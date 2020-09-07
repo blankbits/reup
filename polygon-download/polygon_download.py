@@ -332,7 +332,7 @@ def main_common(environment_type: EnvironmentType, config: dict,
             if environment_type is EnvironmentType.LOCAL:
                 make_directory(file_prefix)
 
-            # Fetch quotes CSV, validate, and write to file.
+            # Fetch quotes CSV and write to file.
             if 'quotes_csv_filename' in config:
                 quotes_csv_data = fetch_csv_data(HistoricalDataType.QUOTES,
                                                  secrets['api_key'],
@@ -344,7 +344,7 @@ def main_common(environment_type: EnvironmentType, config: dict,
                         file_prefix + config['quotes_csv_filename']))
                 threads[-1].start()
 
-            # Fetch trades CSV, validate, and write to file.
+            # Fetch trades CSV and write to file.
             if 'trades_csv_filename' in config:
                 trades_csv_data = fetch_csv_data(HistoricalDataType.TRADES,
                                                  secrets['api_key'],
