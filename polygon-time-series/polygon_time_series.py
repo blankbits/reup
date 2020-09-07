@@ -94,7 +94,7 @@ def get_seconds_df(quotes_df: pd.DataFrame,
     for i in range(len(seconds_df)):
         current_timestamp = seconds_df.at[i, 'timestamp']
         volume_price_dict: Dict[str, int] = {}
-        totals = {
+        total = {
             'volume': 0,
             'volume_aggressive_buy': 0,
             'volume_aggressive_sell': 0,
@@ -107,7 +107,7 @@ def get_seconds_df(quotes_df: pd.DataFrame,
         while (quotes_row < len(quotes_df)
                and quotes_df.at[quotes_row, 'sip_timestamp'] / 10.0**9 <=
                current_timestamp):
-            totals['message_count_quote'] += 1
+            total['message_count_quote'] += 1
             quotes_row += 1
 
         last_value['bid_price'] = quotes_df.at[quotes_row - 1, 'bid_price']
@@ -121,8 +121,8 @@ def get_seconds_df(quotes_df: pd.DataFrame,
                current_timestamp):
             last_value['trade_price'] = trades_df.at[trades_row, 'price']
             last_value['trade_size'] = trades_df.at[trades_row, 'size']
-            totals['volume'] += last_value['trade_size']
-            totals['price'] += last_value['trade_size'] * last_value[
+            total['volume'] += last_value['trade_size']
+            total['price'] += last_value['trade_size'] * last_value[
                 'trade_price']
 
             # Populate volume price dict. Need to cast trade sizes to int in
@@ -136,14 +136,14 @@ def get_seconds_df(quotes_df: pd.DataFrame,
             if (last_value['ask_price'] is not pd.NA
                     and last_value['trade_price'] >=
                     last_value['ask_price'] - np.finfo(np.float64).eps):
-                totals['volume_aggressive_buy'] += last_value['trade_size']
+                total['volume_aggressive_buy'] += last_value['trade_size']
 
             if (last_value['bid_price'] is not pd.NA
                     and last_value['trade_price'] <=
                     last_value['bid_price'] + np.finfo(np.float64).eps):
-                totals['volume_aggressive_sell'] += last_value['trade_size']
+                total['volume_aggressive_sell'] += last_value['trade_size']
 
-            totals['message_count_trade'] += 1
+            total['message_count_trade'] += 1
             trades_row += 1
 
         # Populate data frame values for this row.
@@ -152,18 +152,18 @@ def get_seconds_df(quotes_df: pd.DataFrame,
         seconds_df.at[i, 'ask_price'] = last_value['ask_price']
         seconds_df.at[i, 'ask_size'] = last_value['ask_size']
         seconds_df.at[i, 'last_trade_price'] = last_value['trade_price']
-        if totals['volume'] > 0:
-            seconds_df.at[i, 'vwap'] = totals['price'] / totals['volume']
+        if total['volume'] > 0:
+            seconds_df.at[i, 'vwap'] = total['price'] / total['volume']
         if volume_price_dict:
             seconds_df.at[i,
                           'volume_price_dict'] = json.dumps(volume_price_dict)
-        seconds_df.at[i, 'volume_total'] = totals['volume']
+        seconds_df.at[i, 'volume_total'] = total['volume']
         seconds_df.at[
-            i, 'volume_aggressive_buy'] = totals['volume_aggressive_buy']
+            i, 'volume_aggressive_buy'] = total['volume_aggressive_buy']
         seconds_df.at[
-            i, 'volume_aggressive_sell'] = totals['volume_aggressive_sell']
-        seconds_df.at[i, 'message_count_quote'] = totals['message_count_quote']
-        seconds_df.at[i, 'message_count_trade'] = totals['message_count_trade']
+            i, 'volume_aggressive_sell'] = total['volume_aggressive_sell']
+        seconds_df.at[i, 'message_count_quote'] = total['message_count_quote']
+        seconds_df.at[i, 'message_count_trade'] = total['message_count_trade']
 
     return seconds_df
 
