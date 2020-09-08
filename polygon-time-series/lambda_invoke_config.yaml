@@ -1,0 +1,24 @@
+max_event_count: 2
+sleep_seconds: 120
+s3_bucket: reup
+s3_key_input_prefix: polygon/
+s3_key_quotes_suffix: quotes.csv.gz
+s3_key_trades_suffix: trades.csv.gz
+s3_key_output_prefix: time-series/
+s3_key_output_suffix: time-series.csv.gz
+
+# Passed through to logging.config.dictConfig(config).
+logging:
+  version: 1
+  formatters:
+    simple:
+      format: '%(asctime)s %(levelname)-8s %(name)s - %(message)s'
+  handlers:
+    console:
+      class: logging.StreamHandler
+      level: DEBUG
+      formatter: simple
+      stream: ext://sys.stdout
+  root:
+    level: DEBUG
+    handlers: [console]
