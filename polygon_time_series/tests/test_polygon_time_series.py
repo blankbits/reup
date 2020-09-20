@@ -3,6 +3,7 @@
 for sampling and aggregating is working as intended.
 
 """
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -33,9 +34,10 @@ def fixture_seconds_df(quotes_df, trades_df):
     return pts.get_seconds_df(quotes_df, trades_df)
 
 
-def test_stub(seconds_df):
-    """Test that test fixtures have been successfully loaded.
+def test_seconds_df_timestamp_delta(seconds_df):
+    """Test that min and max delta between timestamps is one second.
 
     """
-    print(seconds_df.head())
-    assert False
+    deltas = (seconds_df['timestamp'] - seconds_df['timestamp'].shift())[1:]
+    assert np.abs(1.0 - deltas.max()) <= np.finfo(np.float64).eps
+    assert np.abs(1.0 - deltas.min()) <= np.finfo(np.float64).eps
