@@ -28,7 +28,7 @@ def init_seconds_df(quotes_df: pd.DataFrame) -> pd.DataFrame:
     """
     start_time = np.ceil(quotes_df.at[0, 'sip_timestamp'] / 10.0**9)
     end_time = np.ceil(quotes_df.at[len(quotes_df) - 1, 'sip_timestamp'] /
-                         10.0**9)
+                       10.0**9)
     timestamp_values = np.linspace(start_time, end_time,
                                    int(np.round(end_time - start_time + 1.0)))
     seconds_df = pd.DataFrame({
@@ -157,8 +157,8 @@ def get_seconds_df(quotes_df: pd.DataFrame,
             seconds_df.at[i,
                           'volume_price_dict'] = json.dumps(volume_price_dict)
         seconds_df.at[i, 'volume_total'] = total['volume']
-        seconds_df.at[
-            i, 'volume_aggressive_buy'] = total['volume_aggressive_buy']
+        seconds_df.at[i,
+                      'volume_aggressive_buy'] = total['volume_aggressive_buy']
         seconds_df.at[
             i, 'volume_aggressive_sell'] = total['volume_aggressive_sell']
         seconds_df.at[i, 'message_count_quote'] = total['message_count_quote']
