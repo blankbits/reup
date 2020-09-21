@@ -6,7 +6,6 @@ import gzip
 import json
 import logging
 import logging.config
-import math
 from typing import Dict
 import uuid
 
@@ -27,8 +26,8 @@ def init_seconds_df(quotes_df: pd.DataFrame) -> pd.DataFrame:
         Empty time series data frame.
 
     """
-    start_time = math.ceil(quotes_df.at[0, 'sip_timestamp'] / 10.0**9)
-    end_time = math.ceil(quotes_df.at[len(quotes_df) - 1, 'sip_timestamp'] /
+    start_time = np.ceil(quotes_df.at[0, 'sip_timestamp'] / 10.0**9)
+    end_time = np.ceil(quotes_df.at[len(quotes_df) - 1, 'sip_timestamp'] /
                          10.0**9)
     timestamp_values = np.linspace(start_time, end_time,
                                    int(np.round(end_time - start_time + 1.0)))
