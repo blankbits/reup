@@ -39,5 +39,18 @@ def test_seconds_df_timestamp_delta(seconds_df):
 
     """
     deltas = (seconds_df['timestamp'] - seconds_df['timestamp'].shift())[1:]
-    assert np.abs(1.0 - deltas.max()) <= np.finfo(np.float64).eps
     assert np.abs(1.0 - deltas.min()) <= np.finfo(np.float64).eps
+    assert np.abs(1.0 - deltas.max()) <= np.finfo(np.float64).eps
+
+
+def test_seconds_df_timestamp_span(seconds_df, quotes_df):
+    """Test that start and end timestamps match tick data.
+
+    """
+    start_time = np.ceil(quotes_df.at[0, 'sip_timestamp'] / 10.0**9)
+    end_time = np.ceil(quotes_df.at[len(quotes_df) - 1, 'sip_timestamp'] /
+                       10.0**9)
+    assert (np.abs(start_time - seconds_df.at[0, 'timestamp']) <= np.finfo(
+        np.float64).eps)
+    assert (np.abs(end_time - seconds_df.at[len(seconds_df) - 1, 'timestamp'])
+            <= np.finfo(np.float64).eps)
