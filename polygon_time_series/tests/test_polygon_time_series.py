@@ -54,3 +54,35 @@ def test_seconds_df_timestamp_span(seconds_df, quotes_df):
         np.float64).eps)
     assert (np.abs(end_time - seconds_df.at[len(seconds_df) - 1, 'timestamp'])
             <= np.finfo(np.float64).eps)
+
+
+def test_seconds_df_empty_second(seconds_df):
+    """Test that fields are populated correctly after a second of no tick data.
+
+    """
+    # This hardcoded value represents a second of data that was deleted from the
+    # test tick data.
+    start_timestamp = 1577977210.0
+    first_row = seconds_df.loc[seconds_df['timestamp'] ==
+                               start_timestamp].copy().reset_index()
+    second_row = seconds_df.loc[seconds_df['timestamp'] == start_timestamp +
+                                1.0].copy().reset_index()
+
+    # Check that inside market and last trade price remain the same.
+    assert second_row.at[0, 'bid_price'] == first_row.at[0, 'bid_price']
+    assert second_row.at[0, 'bid_size'] == first_row.at[0, 'bid_size']
+    assert second_row.at[0, 'ask_price'] == first_row.at[0, 'ask_price']
+    assert second_row.at[0, 'ask_size'] == first_row.at[0, 'ask_size']
+    assert second_row.at[0, 'last_trade_price'] == first_row.at[
+        0, 'last_trade_price']
+
+    # Check that volume aggregations are empty or zero.
+    assert np.isnan(second_row.at[0, 'vwap'])
+    assert np.isnan(second_row.at[0, 'volume_price_dict'])
+    assert second_row.at[0, 'volume_total'] == 0
+    assert second_row.at[0, 'volume_aggressive_buy'] == 0
+    assert second_row.at[0, 'volume_aggressive_sell'] == 0
+
+    # Check that message counts are zero.
+    assert second_row.at[0, 'message_count_quote'] == 0
+    assert second_row.at[0, 'message_count_trade'] == 0
