@@ -60,7 +60,7 @@ def test_seconds_df_empty_second(seconds_df):
     """Test that fields are populated correctly after a second of no tick data.
 
     """
-    # This hardcoded value represents a second of data that was deleted from the
+    # Hardcoded value corresponds to a second of data that was deleted from the
     # test tick data.
     start_timestamp = 1577977210.0
     first_row = seconds_df.loc[seconds_df['timestamp'] ==
@@ -86,3 +86,104 @@ def test_seconds_df_empty_second(seconds_df):
     # Check that message counts are zero.
     assert second_row.at[0, 'message_count_quote'] == 0
     assert second_row.at[0, 'message_count_trade'] == 0
+
+
+def test_seconds_df_inside_market(seconds_df):
+    """Test that inside market values are populated correctly.
+
+    """
+    # Hardcoded values have been manually verified to be correct in the test
+    # tick data.
+    timestamp = 1577977230.0
+    row = seconds_df.loc[seconds_df['timestamp'] ==
+                         timestamp].copy().reset_index()
+    assert row.at[0, 'bid_price'] == 323.77
+    assert row.at[0, 'bid_size'] == 1000
+    assert row.at[0, 'ask_price'] == 323.78
+    assert row.at[0, 'ask_size'] == 900
+
+
+def test_seconds_df_last_trade_price(seconds_df):
+    """Test that last trade price is populated correctly.
+
+    """
+    # Hardcoded values have been manually verified to be correct in the test
+    # tick data.
+    timestamp = 1577977230.0
+    row = seconds_df.loc[seconds_df['timestamp'] ==
+                         timestamp].copy().reset_index()
+    assert row.at[0, 'last_trade_price'] == 323.775
+
+
+def test_seconds_df_vwap(seconds_df):
+    """Test that vwap is populated correctly.
+
+    """
+    # Hardcoded values have been manually verified to be correct in the test
+    # tick data.
+    timestamp = 1577977230.0
+    row = seconds_df.loc[seconds_df['timestamp'] ==
+                         timestamp].copy().reset_index()
+    assert row.at[0, 'vwap'] == 889101.05 / 2746
+
+
+def test_seconds_df_volume_price_dict(seconds_df):
+    """Test that volume price dict is populated correctly.
+
+    """
+    # Hardcoded values have been manually verified to be correct in the test
+    # tick data.
+    timestamp = 1577977230.0
+    row = seconds_df.loc[seconds_df['timestamp'] ==
+                         timestamp].copy().reset_index()
+    assert (row.at[0, 'volume_price_dict'] ==
+            '{"323.78": 2482, "323.785": 249, "323.775": 15}')
+
+
+def test_seconds_df_volume_total(seconds_df):
+    """Test that volume total is populated correctly.
+
+    """
+    # Hardcoded values have been manually verified to be correct in the test
+    # tick data.
+    timestamp = 1577977230.0
+    row = seconds_df.loc[seconds_df['timestamp'] ==
+                         timestamp].copy().reset_index()
+    assert row.at[0, 'volume_total'] == 2746
+
+
+def test_seconds_df_volume_aggressive_buy(seconds_df):
+    """Test that volume aggressive buy is populated correctly.
+
+    """
+    # Hardcoded values have been manually verified to be correct in the test
+    # tick data.
+    timestamp = 1577977203.0
+    row = seconds_df.loc[seconds_df['timestamp'] ==
+                         timestamp].copy().reset_index()
+    assert row.at[0, 'volume_aggressive_buy'] == 302
+
+
+def test_seconds_df_volume_aggressive_sell(seconds_df):
+    """Test that volume aggressive sell is populated correctly.
+
+    """
+    # Hardcoded values have been manually verified to be correct in the test
+    # tick data.
+    timestamp = 1577977217.0
+    row = seconds_df.loc[seconds_df['timestamp'] ==
+                         timestamp].copy().reset_index()
+    assert row.at[0, 'volume_aggressive_sell'] == 250
+
+
+def test_seconds_df_volume_message_count(seconds_df):
+    """Test that message counts are populated correctly.
+
+    """
+    # Hardcoded values have been manually verified to be correct in the test
+    # tick data.
+    timestamp = 1577977217.0
+    row = seconds_df.loc[seconds_df['timestamp'] ==
+                         timestamp].copy().reset_index()
+    assert row.at[0, 'message_count_quote'] == 10
+    assert row.at[0, 'message_count_trade'] == 3
