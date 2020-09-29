@@ -1,9 +1,27 @@
 {
     "polygon_time_series": {
         "s3_bucket": "reup",
-        "s3_key_quotes": "polygon/2020-01-02/SPY/quotes.csv.gz",
-        "s3_key_trades": "polygon/2020-01-02/SPY/trades.csv.gz",
-        "s3_key_output": "polygon_time_series.csv.gz",
+        "s3_key_quotes": "polygon/2020-04-01/SPY/quotes.csv.gz",
+        "s3_key_trades": "polygon/2020-04-01/SPY/trades.csv.gz",
+        "s3_key_output": "polygon-time-series.csv.gz",
+        "discard_trade_conditions": {
+            "2": "Average Price Trade",
+            "5": "Bunched Sold Trade",
+            "7": "Cash Sale",
+            "10": "Derivatively Priced",
+            "12": "Form T",
+            "13": "Extended Trading Hours (Sold Out of Sequence)",
+            "15": "Market Center Official Close",
+            "16": "Market Center Official Open",
+            "20": "Next Day",
+            "21": "Price Variation Trade",
+            "22": "Price Variation Trade",
+            "29": "Seller",
+            "33": "Sold (out of Sequence)",
+            "38": "Corrected Consolidated Close (per listing market)",
+            "52": "Contingent Trade",
+            "53": "Qualified Contingent Trade (\"QCT\")"
+        },
         "logging": {
             "version": 1,
             "formatters": {

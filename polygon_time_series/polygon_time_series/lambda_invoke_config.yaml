@@ -1,11 +1,33 @@
-max_event_count: 2
+max_event_count: 600
 sleep_seconds: 120
+
 s3_bucket: reup
 s3_key_input_prefix: polygon/
 s3_key_quotes_suffix: quotes.csv.gz
 s3_key_trades_suffix: trades.csv.gz
 s3_key_output_prefix: time-series/
 s3_key_output_suffix: time-series.csv.gz
+
+# Trades with any of these conditions will be ignored. The dict key indicates
+# the condition, and the dict value is included for readability only.
+discard_trade_conditions:
+  2: Average Price Trade
+  5: Bunched Sold Trade
+  7: Cash Sale
+  10: Derivatively Priced
+  12: Form T
+  13: Extended Trading Hours (Sold Out of Sequence)
+  15: Market Center Official Close
+  16: Market Center Official Open
+  20: Next Day
+  21: Price Variation Trade
+  22: Price Variation Trade
+  29: Seller
+  33: Sold (out of Sequence)
+  # 37: Odd Lot Trade
+  38: Corrected Consolidated Close (per listing market)
+  52: Contingent Trade
+  53: Qualified Contingent Trade ("QCT")
 
 # Passed through to logging.config.dictConfig(config).
 logging:

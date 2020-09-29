@@ -167,6 +167,29 @@ def get_seconds_df(quotes_df: pd.DataFrame,
     return seconds_df
 
 
+def discard_trade_conditions(trades_df: pd.DataFrame,
+                             trade_conditions: dict) -> pd.DataFrame:
+    """Remove rows from the trades data frame which contain any of the trade
+    conditions provided.
+
+    Args:
+        trades_df: Data frame of trade messages.
+        trade_conditions: Dict with keys representing trade conditions to
+            discard and values containing descriptions of the conditions for
+            debugging purposes.
+
+    Returns:
+        Trades data frame.
+
+    """
+    discard_mask = trades_df['conditions'].str.split().fillna(False)
+    discard_mask = [
+        (any(k in d for k in trade_conditions.keys()) if bool(d) else False)
+        for d in discard_mask
+    ]
+    return trades_df.loc[np.invert(discard_mask), ].reset_index(drop=True)
+
+
 def download_s3_object(s3_bucket: str, s3_key: str) -> str:
     """Download an S3 object to local storage for this Lambda instance.
 
@@ -220,6 +243,10 @@ def main_lambda(event: dict, context) -> None:
                                            config['s3_key_trades'])
     with gzip.open(trades_local_path, 'rb') as gzip_file:
         trades_df = pd.read_csv(gzip_file)
+
+    # Discard trades that should be ignored.
+    trades_df = discard_trade_conditions(trades_df,
+                                         config['discard_trade_conditions'])
 
     # Create time series data frame and save CSV file to S3.
     seconds_df = get_seconds_df(quotes_df, trades_df)
