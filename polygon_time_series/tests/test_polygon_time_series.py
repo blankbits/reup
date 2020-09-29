@@ -187,3 +187,20 @@ def test_seconds_df_volume_message_count(seconds_df):
                          timestamp].copy().reset_index()
     assert row.at[0, 'message_count_quote'] == 10
     assert row.at[0, 'message_count_trade'] == 3
+
+
+def test_discard_trade_conditions(trades_df):
+    """Test that trades with any of the specified conditions are discarded, and
+    that that other trades are retained.
+    """
+    # Hardcoded values have been manually verified to be correct in the test
+    # tick data.
+    # timestamp = 1577977249.0
+    trade_conditions = {'37': '', '53': ''}
+    discard_sequence_numbers = [6029301, 6028801, 6028601]
+    retain_sequence_numbers = [6028401, 6028501, 6029901]
+    discard_df = pts.discard_trade_conditions(trades_df, trade_conditions)
+    assert (sum(
+        discard_df['sequence_number'].isin(discard_sequence_numbers)) == 0)
+    assert (sum(discard_df['sequence_number'].isin(retain_sequence_numbers)) ==
+            len(retain_sequence_numbers))
