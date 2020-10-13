@@ -1,5 +1,5 @@
 {
-    "polygon_download": {
+    "polygon_tick_data": {
         "symbols": [
             "SPY"
         ],
@@ -7,7 +7,7 @@
             "2020-01-02"
         ],
         "response_limit": 50000,
-        "download_location": "reup/polygon",
+        "download_location": "reup/third-party/polygon-tick-data",
         "quotes_csv_filename": "quotes.csv.gz",
         "trades_csv_filename": "trades.csv.gz",
         "logging": {

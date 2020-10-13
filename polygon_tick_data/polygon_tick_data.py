@@ -6,8 +6,8 @@ Behavior is determined by config passed either as a YAML file or as a Lambda
 event, and by a secrets YAML file containing the Polygon API key.
 
 Example:
-    ./polygon_download.py --config_file polygon_download_config.yaml \
-        --secrets_file polygon_download_secrets.yaml
+    ./polygon_tick_data.py --config_file polygon_tick_data_config.yaml \
+        --secrets_file polygon_tick_data_secrets.yaml
 
 """
 import argparse
@@ -269,11 +269,11 @@ def main_local() -> None:
     parser.add_argument('--config_file',
                         metavar='FILE',
                         help='config YAML',
-                        default='polygon_download_config.yaml')
+                        default='polygon_tick_data_config.yaml')
     parser.add_argument('--secrets_file',
                         metavar='FILE',
                         help='secrets YAML',
-                        default='polygon_download_secrets.yaml')
+                        default='polygon_tick_data_secrets.yaml')
     args = parser.parse_args()
 
     # Load YAML files into dicts.
@@ -297,10 +297,10 @@ def main_lambda(event: dict, context) -> None:
     # pylint: disable=unused-argument
 
     # Load config from Lambda event.
-    config = event['polygon_download']
+    config = event['polygon_tick_data']
 
     # Load secrets from deployed YAML file.
-    with open('polygon_download_secrets.yaml', 'r') as secrets_file:
+    with open('polygon_tick_data_secrets.yaml', 'r') as secrets_file:
         secrets = yaml.safe_load(secrets_file.read())
 
     main_common(EnvironmentType.LAMBDA, config, secrets)

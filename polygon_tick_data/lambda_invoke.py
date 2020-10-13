@@ -53,14 +53,14 @@ def main() -> None:
     event_count = 0
     for date in config['dates']:
         for symbol in config['symbols']:
-            json_dict['polygon_download']['dates'] = [date]
-            json_dict['polygon_download']['symbols'] = [symbol]
+            json_dict['polygon_tick_data']['dates'] = [date]
+            json_dict['polygon_tick_data']['symbols'] = [symbol]
 
             # Invoke Lambda function async.
             logger.info('Invoking Lambda function async | %s',
                         'date:{}, symbol:{}'.format(date, symbol))
             response = client.invoke(
-                FunctionName='polygon_download',
+                FunctionName='polygon_tick_data',
                 InvocationType='Event',
                 # LogType='',
                 # ClientContext='',
