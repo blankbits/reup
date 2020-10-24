@@ -7,12 +7,13 @@ import json
 import logging
 import logging.config
 from typing import Dict
-import uuid
 
 import boto3
 import botocore
 import numpy as np
 import pandas as pd
+
+import reup_utils
 
 
 def init_seconds_df(quotes_df: pd.DataFrame) -> pd.DataFrame:
@@ -190,31 +191,6 @@ def discard_trade_conditions(trades_df: pd.DataFrame,
     return trades_df.loc[np.invert(discard_mask), ].reset_index(drop=True)
 
 
-def download_s3_object(s3_bucket: str, s3_key: str) -> str:
-    """Download an S3 object to local storage for this Lambda instance.
-
-    Args:
-        s3_bucket: S3 bucket name for object to download.
-        s3_key: S3 key for object to download.
-
-    Returns:
-        Unique local path for downloaded object.
-
-    """
-    logger = logging.getLogger(__name__)
-    local_path = '/tmp/{}'.format(uuid.uuid4())
-    logger.info('Downloading S3 object | %s',
-                's3_bucket:{}, s3_key:{}'.format(s3_bucket, s3_key))
-    try:
-        s3_client = boto3.client('s3')
-        s3_client.download_file(s3_bucket, s3_key, local_path)
-    except botocore.exceptions.ClientError as exception:
-        logger.error('S3 object download failed')
-        raise exception
-
-    return local_path
-
-
 def main_lambda(event: dict, context) -> None:
     """Start execution when running on Lambda.
 
@@ -234,13 +210,13 @@ def main_lambda(event: dict, context) -> None:
     logger = logging.getLogger(__name__)
 
     # Download quote and trade CSV files from S3 and load into data frames.
-    quotes_local_path = download_s3_object(config['s3_bucket'],
-                                           config['s3_key_quotes'])
+    quotes_local_path = reup_utils.download_s3_object(config['s3_bucket'],
+                                                      config['s3_key_quotes'])
     with gzip.open(quotes_local_path, 'rb') as gzip_file:
         quotes_df = pd.read_csv(gzip_file)
 
-    trades_local_path = download_s3_object(config['s3_bucket'],
-                                           config['s3_key_trades'])
+    trades_local_path = reup_utils.download_s3_object(config['s3_bucket'],
+                                                      config['s3_key_trades'])
     with gzip.open(trades_local_path, 'rb') as gzip_file:
         trades_df = pd.read_csv(gzip_file)
 
