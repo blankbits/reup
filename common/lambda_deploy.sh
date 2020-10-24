@@ -19,7 +19,7 @@ cd ../../../..
 rm -r v-env
 
 # Add lambda source files to zip.
-zip -g lambda_package.zip $lambda_source_files
+zip -gj lambda_package.zip $lambda_source_files
 
 # Deploy lambda package, then clean up zip.
 aws lambda update-function-code --function-name $lambda_function_name \
