@@ -1,29 +1,27 @@
 {
-    "features_day": {
-        "s3_bucket": "reup",
-        "s3_key_time_series": "historical-data/time-series/2020-04-01/SPY/time-series.csv.gz",
-        "s3_key_output": "features/day/features.csv.gz",
-        "logging": {
-            "version": 1,
-            "formatters": {
-                "simple": {
-                    "format": "%(asctime)s %(levelname)-8s %(name)s - %(message)s"
-                }
-            },
-            "handlers": {
-                "console": {
-                    "class": "logging.StreamHandler",
-                    "level": "DEBUG",
-                    "formatter": "simple",
-                    "stream": "ext://sys.stdout"
-                }
-            },
-            "root": {
-                "level": "DEBUG",
-                "handlers": [
-                    "console"
-                ]
+    "s3_bucket": "reup",
+    "s3_key_input": "historical-data/time-series/2020-04-01/SPY/time-series.csv.gz",
+    "s3_key_output": "features/day/features.csv.gz",
+    "logging": {
+        "version": 1,
+        "formatters": {
+            "simple": {
+                "format": "%(asctime)s %(levelname)-8s %(name)s - %(message)s"
             }
+        },
+        "handlers": {
+            "console": {
+                "class": "logging.StreamHandler",
+                "level": "DEBUG",
+                "formatter": "simple",
+                "stream": "ext://sys.stdout"
+            }
+        },
+        "root": {
+            "level": "DEBUG",
+            "handlers": [
+                "console"
+            ]
         }
     }
 }
