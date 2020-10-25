@@ -42,13 +42,14 @@ def main() -> None:
     args = parser.parse_args()
 
     # Load config YAML file and Lambda event JSON file.
-    with open(args.config_file, 'r') as config_file:
-        config = yaml.safe_load(config_file.read())
-    with open(args.lambda_event_file, 'r') as json_file:
-        json_dict = json.load(json_file)
+    with open(args.config_file, 'r') as f:
+        config = yaml.safe_load(f.read())
+    with open(args.lambda_event_file, 'r') as f:
+        json_dict = json.load(f)
 
     # Initialize logger.
-    logging.config.dictConfig(config['logging'])
+    with open(config['logging_config'], 'r') as f:
+        logging.config.dictConfig(yaml.safe_load(f.read()))
     logger = logging.getLogger(__name__)
 
     # Get the set of date and symbol pairs found in the input S3 keys.
