@@ -1,5 +1,6 @@
 max_event_count: 50
 sleep_seconds: 120
+
 symbols: [
   'AAPL', 'MSFT', 'AMZN', 'GOOG', 'GOOGL', 'FB',
   'XLC', 'XLY', 'XLP', 'XLE', 'XLF', 'XLV', 'XLI', 'XLB', 'XLRE', 'XLK', 'XLU',
@@ -133,18 +134,4 @@ dates: [
   '2020-06-30'
 ]
 
-# Passed through to logging.config.dictConfig(config).
-logging:
-  version: 1
-  formatters:
-    simple:
-      format: '%(asctime)s %(levelname)-8s %(name)s - %(message)s'
-  handlers:
-    console:
-      class: logging.StreamHandler
-      level: DEBUG
-      formatter: simple
-      stream: ext://sys.stdout
-  root:
-    level: DEBUG
-    handlers: [console]
+logging_config: ../common/logging_config_default.yaml
