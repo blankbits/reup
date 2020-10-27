@@ -41,15 +41,14 @@ def main() -> None:
     args = parser.parse_args()
 
     # Load config YAML file and Lambda event JSON file.
-    with open(args.config_file, 'r') as config_file:
-        config = yaml.safe_load(config_file.read())
-    with open(args.lambda_event_file, 'r') as json_file:
-        json_dict = json.load(json_file)
+    with open(args.config_file, 'r') as f:
+        config = yaml.safe_load(f.read())
+    with open(args.lambda_event_file, 'r') as f:
+        json_dict = json.load(f)
 
     # Initialize logger.
-    with open(config['logging_config'], 'r') as logging_config_file:
-        logging_config = yaml.safe_load(logging_config_file.read())
-    logging.config.dictConfig(logging_config)
+    with open(config['logging_config'], 'r') as f:
+        logging.config.dictConfig(yaml.safe_load(f.read()))
     logger = logging.getLogger(__name__)
 
     # Get the set of date and symbol pairs found in the input S3 keys.
@@ -58,62 +57,52 @@ def main() -> None:
     date_symbol_dict = reup_utils.get_date_symbol_dict(
         s3_keys, config['s3_key_input_prefix'])
 
-    logger.info('wawawewow')
+    # Process each date and symbol pair.
+    client = boto3.client('lambda')
+    event_count = 0
+    for date in date_symbol_dict:
+        for symbol in date_symbol_dict[date]:
+            json_dict['s3_bucket'] = config['s3_bucket']
+            json_dict['s3_key_input'] = (config['s3_key_input_prefix'] + date +
+                                         '/' + symbol + '/' +
+                                         config['s3_key_input_suffix'])
+            json_dict['s3_key_output'] = (config['s3_key_output_prefix'] +
+                                          date + '/' + symbol + '/' +
+                                          config['s3_key_output_suffix'])
 
-    # # Process each date and symbol pair.
-    # client = boto3.client('lambda')
-    # event_count = 0
-    # for date in date_symbol_dict:
-    #     for symbol in date_symbol_dict[date]:
-    #         json_dict['s3_bucket'] = config['s3_bucket']
-    #         json_dict['s3_key_quotes'] = (
-    #             config['s3_key_input_prefix'] + date + '/' + symbol + '/' +
-    #             config['s3_key_quotes_suffix'])
-    #         json_dict['s3_key_trades'] = (
-    #             config['s3_key_input_prefix'] + date + '/' + symbol + '/' +
-    #             config['s3_key_trades_suffix'])
-    #         json_dict['s3_key_output'] = (
-    #             config['s3_key_output_prefix'] + date + '/' + symbol + '/' +
-    #             config['s3_key_output_suffix'])
+            # Check whether S3 output already exists.
+            if len(
+                    reup_utils.get_s3_keys(config['s3_bucket'],
+                                           json_dict['s3_key_output'])) > 0:
+                logger.info(
+                    'Skipping Lambda invocation | %s',
+                    's3_key_output:{}'.format(json_dict['s3_key_output']))
+                continue
 
-    #         # Check whether S3 output already exists.
-    #         if len(
-    #                 reup_utils.get_s3_keys(
-    #                     config['s3_bucket'], json_dict
-    #                     ['s3_key_output'])) > 0:
-    #             logger.info(
-    #                 'Skipping Lambda invocation | %s',
-    #                 's3_key_output:{}'.format(
-    #                     json_dict['s3_key_output']))
-    #             continue
+            # Invoke Lambda function async.
+            logger.info('Invoking Lambda function async | %s',
+                        'date:{}, symbol:{}'.format(date, symbol))
+            response = client.invoke(
+                FunctionName=config['lambda_function'],
+                InvocationType='Event',
+                Payload=json.dumps(json_dict).encode(),
+            )
 
-    #         # Invoke Lambda function async.
-    #         logger.info('Invoking Lambda function async | %s',
-    #                     'date:{}, symbol:{}'.format(date, symbol))
-    #         response = client.invoke(
-    #             FunctionName='polygon_time_series',
-    #             InvocationType='Event',
-    #             # LogType='',
-    #             # ClientContext='',
-    #             Payload=json.dumps(json_dict).encode(),
-    #             # Qualifier=''
-    #         )
+            # Exit if invoke is unsuccessful.
+            if response['ResponseMetadata']['HTTPStatusCode'] != 202:
+                logger.error('Lambda invoke failed')
+                logger.error(json.dumps(response))
+                sys.exit(1)
 
-    #         # Exit if invoke is unsuccessful.
-    #         if response['ResponseMetadata']['HTTPStatusCode'] != 202:
-    #             logger.error('Lambda invoke failed')
-    #             logger.error(json.dumps(response))
-    #             sys.exit(1)
+            # Ensure the max number of concurrent events isn't exceeded.
+            event_count += 1
+            if event_count == config['max_event_count']:
+                logger.info(
+                    'Sleeping | %s', 'event_count:{}, sleep_seconds:{}'.format(
+                        event_count, config['sleep_seconds']))
+                time.sleep(config['sleep_seconds'])
+                event_count = 0
 
-    #         # Ensure the max number of concurrent events isn't exceeded.
-    #         event_count += 1
-    #         if event_count == config['max_event_count']:
-    #             logger.info(
-    #                 'Sleeping | %s', 'event_count:{}, sleep_seconds:{}'.format(
-    #                     event_count, config['sleep_seconds']))
-    #             time.sleep(config['sleep_seconds'])
-    #             event_count = 0
-    
 
 if __name__ == '__main__':
     main()
