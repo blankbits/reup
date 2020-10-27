@@ -8,8 +8,6 @@ import logging
 import logging.config
 from typing import Dict
 
-import boto3
-import botocore
 import numpy as np
 import pandas as pd
 
@@ -207,7 +205,7 @@ def main_lambda(event: dict, context) -> None:
 
     # Initialize logger.
     logging.config.dictConfig(config['logging'])
-    logger = logging.getLogger(__name__)
+    # logger = logging.getLogger(__name__)
 
     # Download quote and trade CSV files from S3 and load into data frames.
     quotes_local_path = reup_utils.download_s3_object(config['s3_bucket'],
@@ -226,16 +224,6 @@ def main_lambda(event: dict, context) -> None:
 
     # Create time series data frame and save CSV file to S3.
     seconds_df = get_seconds_df(quotes_df, trades_df)
-    logger.info(
-        'Writing S3 object | %s',
-        's3_bucket: {}, s3_key: {}'.format(config['s3_bucket'],
-                                           config['s3_key_output']))
-    try:
-        s3_client = boto3.client('s3')
-        s3_client.put_object(Body=gzip.compress(
-            seconds_df.to_csv(index=False).encode()),
-                             Bucket=config['s3_bucket'],
-                             Key=config['s3_key_output'])
-    except botocore.exceptions.ClientError as exception:
-        logger.error('S3 object write failed')
-        raise exception
+    reup_utils.upload_s3_object(
+        config['s3_bucket'], config['s3_key_output'],
+        gzip.compress(seconds_df.to_csv(index=False).encode()))
