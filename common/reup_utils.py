@@ -41,6 +41,26 @@ def download_s3_object(s3_bucket: str,
     return local_path
 
 
+def upload_s3_object(s3_bucket: str, s3_key: str, data: bytes) -> None:
+    """Upload an S3 object.
+
+    Args:
+        s3_bucket: S3 bucket name for object to upload.
+        s3_key: S3 key for object to upload.
+        data: Binary object data.
+
+    """
+    logger = logging.getLogger(__name__)
+    logger.info('Uploading S3 object | %s',
+                's3_bucket: {}, s3_key: {}'.format(s3_bucket, s3_key))
+    try:
+        s3_client = boto3.client('s3')
+        s3_client.put_object(Body=data, Bucket=s3_bucket, Key=s3_key)
+    except botocore.exceptions.ClientError as exception:
+        logger.error('S3 object upload failed')
+        raise exception
+
+
 def get_s3_keys(s3_bucket: str, s3_prefix: str) -> List[str]:
     """Find all the S3 keys in a bucket with a given prefix.
 
