@@ -133,5 +133,7 @@ dates: [
   '2020-06-29',
   '2020-06-30'
 ]
+download_location: reup/third-party/polygon-tick-data
+
 
 logging_config: ../common/logging_config_default.yaml

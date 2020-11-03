@@ -2,9 +2,9 @@
 """Invokes the Lambda function async using a template event loaded from a JSON
 file.
 
-The 'symbols' and 'dates' fields in the event are overwritten so that an
-arbitrary number of Lambda function invocations can be triggered at the same
-time to download data for different symbols and dates.
+The 'symbols', 'dates', and 'download_location' fields in the event are
+overwritten so that an arbitrary number of Lambda function invocations can be
+triggered at the same time to download data for different symbols and dates.
 
 Example:
     ./lambda_invoke.py --config_file lambda_invoke_config.yaml \
@@ -38,11 +38,13 @@ def main() -> None:
                         default='lambda_event.json')
     args = parser.parse_args()
 
-    # Load config YAML file and Lambda event JSON file.
+    # Load config YAML file and Lambda event JSON file. Overwrite JSON download
+    # location with YAML value.
     with open(args.config_file, 'r') as f:
         config = yaml.safe_load(f.read())
     with open(args.lambda_event_file, 'r') as f:
         json_dict = json.load(f)
+    json_dict['download_location'] = config['download_location']
 
     # Initialize logger.
     with open(config['logging_config'], 'r') as f:
@@ -54,8 +56,8 @@ def main() -> None:
     event_count = 0
     for date in config['dates']:
         for symbol in config['symbols']:
-            json_dict['polygon_tick_data']['dates'] = [date]
-            json_dict['polygon_tick_data']['symbols'] = [symbol]
+            json_dict['dates'] = [date]
+            json_dict['symbols'] = [symbol]
 
             # Invoke Lambda function async.
             logger.info('Invoking Lambda function async | %s',
