@@ -6,10 +6,10 @@
         "dates": [
             "2020-01-02"
         ],
-        "response_limit": 50000,
         "download_location": "reup/third-party/polygon-tick-data",
         "quotes_csv_filename": "quotes.csv.gz",
         "trades_csv_filename": "trades.csv.gz",
+        "response_limit": 50000,
         "logging": {
             "version": 1,
             "formatters": {
