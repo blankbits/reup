@@ -296,14 +296,11 @@ def main_lambda(event: dict, context) -> None:
     """
     # pylint: disable=unused-argument
 
-    # Load config from Lambda event.
-    config = event['polygon_tick_data']
-
     # Load secrets from deployed YAML file.
     with open('polygon_tick_data_secrets.yaml', 'r') as secrets_file:
         secrets = yaml.safe_load(secrets_file.read())
 
-    main_common(EnvironmentType.LAMBDA, config, secrets)
+    main_common(EnvironmentType.LAMBDA, event, secrets)
 
 
 def main_common(environment_type: EnvironmentType, config: dict,
