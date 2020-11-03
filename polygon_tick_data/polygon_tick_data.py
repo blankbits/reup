@@ -209,7 +209,8 @@ def fetch_csv_data(historical_data_type: HistoricalDataType, api_key: str,
         CSV-formatted string.
 
     Raises:
-        SystemExit: An API call wasn't successful.
+        SystemExit: An API call wasn't successful or zero total results were
+            returned.
 
     """
     logger = logging.getLogger(__name__)
@@ -256,6 +257,12 @@ def fetch_csv_data(historical_data_type: HistoricalDataType, api_key: str,
         # Update state for next iteration.
         min_timestamp = response.results[-1]['t']
         last_results = response.results
+
+    # Exit if CSV consists only of header row, indicating zero total results
+    # were returned.
+    if len(csv_strings) == 1:
+        logger.error('Fetch returned zero total results')
+        sys.exit(1)
 
     return '\n'.join(csv_strings) + '\n'
 
