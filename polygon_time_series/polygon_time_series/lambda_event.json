@@ -1,48 +1,46 @@
 {
-    "polygon_time_series": {
-        "s3_bucket": "reup",
-        "s3_key_quotes": "third-party/polygon-tick-data/2020-04-01/SPY/quotes.csv.gz",
-        "s3_key_trades": "third-party/polygon-tick-data/2020-04-01/SPY/trades.csv.gz",
-        "s3_key_output": "historical-data/time-series/time-series.csv.gz",
-        "discard_trade_conditions": {
-            "2": "Average Price Trade",
-            "5": "Bunched Sold Trade",
-            "7": "Cash Sale",
-            "10": "Derivatively Priced",
-            "12": "Form T",
-            "13": "Extended Trading Hours (Sold Out of Sequence)",
-            "15": "Market Center Official Close",
-            "16": "Market Center Official Open",
-            "20": "Next Day",
-            "21": "Price Variation Trade",
-            "22": "Price Variation Trade",
-            "29": "Seller",
-            "33": "Sold (out of Sequence)",
-            "38": "Corrected Consolidated Close (per listing market)",
-            "52": "Contingent Trade",
-            "53": "Qualified Contingent Trade (\"QCT\")"
-        },
-        "logging": {
-            "version": 1,
-            "formatters": {
-                "simple": {
-                    "format": "%(asctime)s %(levelname)-8s %(name)s - %(message)s"
-                }
-            },
-            "handlers": {
-                "console": {
-                    "class": "logging.StreamHandler",
-                    "level": "DEBUG",
-                    "formatter": "simple",
-                    "stream": "ext://sys.stdout"
-                }
-            },
-            "root": {
-                "level": "DEBUG",
-                "handlers": [
-                    "console"
-                ]
+    "s3_bucket": "reup",
+    "s3_key_quotes": "third-party/polygon-tick-data/2020-04-01/SPY/quotes.csv.gz",
+    "s3_key_trades": "third-party/polygon-tick-data/2020-04-01/SPY/trades.csv.gz",
+    "s3_key_output": "historical-data/time-series/time-series.csv.gz",
+    "discard_trade_conditions": {
+        "2": "Average Price Trade",
+        "5": "Bunched Sold Trade",
+        "7": "Cash Sale",
+        "10": "Derivatively Priced",
+        "12": "Form T",
+        "13": "Extended Trading Hours (Sold Out of Sequence)",
+        "15": "Market Center Official Close",
+        "16": "Market Center Official Open",
+        "20": "Next Day",
+        "21": "Price Variation Trade",
+        "22": "Price Variation Trade",
+        "29": "Seller",
+        "33": "Sold (out of Sequence)",
+        "38": "Corrected Consolidated Close (per listing market)",
+        "52": "Contingent Trade",
+        "53": "Qualified Contingent Trade (\"QCT\")"
+    },
+    "logging": {
+        "version": 1,
+        "formatters": {
+            "simple": {
+                "format": "%(asctime)s %(levelname)-8s %(name)s - %(message)s"
             }
+        },
+        "handlers": {
+            "console": {
+                "class": "logging.StreamHandler",
+                "level": "DEBUG",
+                "formatter": "simple",
+                "stream": "ext://sys.stdout"
+            }
+        },
+        "root": {
+            "level": "DEBUG",
+            "handlers": [
+                "console"
+            ]
         }
     }
 }

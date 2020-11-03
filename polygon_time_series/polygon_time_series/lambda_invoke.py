@@ -63,26 +63,24 @@ def main() -> None:
     event_count = 0
     for date in date_symbol_dict:
         for symbol in date_symbol_dict[date]:
-            json_dict['polygon_time_series']['s3_bucket'] = config['s3_bucket']
-            json_dict['polygon_time_series']['s3_key_quotes'] = (
-                config['s3_key_input_prefix'] + date + '/' + symbol + '/' +
-                config['s3_key_quotes_suffix'])
-            json_dict['polygon_time_series']['s3_key_trades'] = (
-                config['s3_key_input_prefix'] + date + '/' + symbol + '/' +
-                config['s3_key_trades_suffix'])
-            json_dict['polygon_time_series']['s3_key_output'] = (
-                config['s3_key_output_prefix'] + date + '/' + symbol + '/' +
-                config['s3_key_output_suffix'])
+            json_dict['s3_bucket'] = config['s3_bucket']
+            json_dict['s3_key_quotes'] = (config['s3_key_input_prefix'] +
+                                          date + '/' + symbol + '/' +
+                                          config['s3_key_quotes_suffix'])
+            json_dict['s3_key_trades'] = (config['s3_key_input_prefix'] +
+                                          date + '/' + symbol + '/' +
+                                          config['s3_key_trades_suffix'])
+            json_dict['s3_key_output'] = (config['s3_key_output_prefix'] +
+                                          date + '/' + symbol + '/' +
+                                          config['s3_key_output_suffix'])
 
             # Check whether S3 output already exists.
             if len(
-                    reup_utils.get_s3_keys(
-                        config['s3_bucket'], json_dict['polygon_time_series']
-                        ['s3_key_output'])) > 0:
+                    reup_utils.get_s3_keys(config['s3_bucket'],
+                                           json_dict['s3_key_output'])) > 0:
                 logger.info(
                     'Skipping Lambda invocation | %s',
-                    's3_key_output:{}'.format(
-                        json_dict['polygon_time_series']['s3_key_output']))
+                    's3_key_output:{}'.format(json_dict['s3_key_output']))
                 continue
 
             # Invoke Lambda function async.

@@ -200,30 +200,27 @@ def main_lambda(event: dict, context) -> None:
     """
     # pylint: disable=unused-argument
 
-    # Load config from Lambda event.
-    config = event['polygon_time_series']
-
     # Initialize logger.
-    logging.config.dictConfig(config['logging'])
+    logging.config.dictConfig(event['logging'])
     # logger = logging.getLogger(__name__)
 
     # Download quote and trade CSV files from S3 and load into data frames.
-    quotes_local_path = reup_utils.download_s3_object(config['s3_bucket'],
-                                                      config['s3_key_quotes'])
+    quotes_local_path = reup_utils.download_s3_object(event['s3_bucket'],
+                                                      event['s3_key_quotes'])
     with gzip.open(quotes_local_path, 'rb') as gzip_file:
         quotes_df = pd.read_csv(gzip_file)
 
-    trades_local_path = reup_utils.download_s3_object(config['s3_bucket'],
-                                                      config['s3_key_trades'])
+    trades_local_path = reup_utils.download_s3_object(event['s3_bucket'],
+                                                      event['s3_key_trades'])
     with gzip.open(trades_local_path, 'rb') as gzip_file:
         trades_df = pd.read_csv(gzip_file)
 
     # Discard trades that should be ignored.
     trades_df = discard_trade_conditions(trades_df,
-                                         config['discard_trade_conditions'])
+                                         event['discard_trade_conditions'])
 
     # Create time series data frame and save CSV file to S3.
     seconds_df = get_seconds_df(quotes_df, trades_df)
     reup_utils.upload_s3_object(
-        config['s3_bucket'], config['s3_key_output'],
+        event['s3_bucket'], event['s3_key_output'],
         gzip.compress(seconds_df.to_csv(index=False).encode()))
