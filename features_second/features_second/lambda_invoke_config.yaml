@@ -1,0 +1,11 @@
+max_event_count: 600
+sleep_seconds: 30
+
+lambda_function: features_second
+s3_bucket: reup
+s3_key_input_prefix: historical-data/time-series/
+s3_key_input_suffix: time-series.csv.gz
+s3_key_output_prefix: features/second/
+s3_key_output_suffix: features.csv.gz
+
+logging_config: ../../common/logging_config_default.yaml
