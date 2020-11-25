@@ -2,6 +2,13 @@
     "s3_bucket": "reup",
     "s3_key_input": "historical-data/time-series/2020-04-01/SPY/time-series.csv.gz",
     "s3_key_output": "features/second/features.csv.gz",
+    "time_windows": [
+        15,
+        60,
+        300,
+        900,
+        3600
+    ],
     "logging": {
         "version": 1,
         "formatters": {

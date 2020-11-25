@@ -8,6 +8,7 @@ import gzip
 import json
 import logging
 import logging.config
+from typing import List
 
 import numpy as np
 import pandas as pd
@@ -15,12 +16,13 @@ import pandas as pd
 import reup_utils
 
 
-def get_output_df(time_series_df: pd.DataFrame, date_str: str) -> pd.DataFrame:
-    """Create output data frame from time series data and date.
+def get_output_df(time_series_df: pd.DataFrame, time_windows: List[int]) -> pd.DataFrame:
+    """Create output data frame from time series data, calculating features for
+    trailing time windows using the provided lengths.
 
     Args:
         time_series_df: Data frame of time series data.
-        date_str: Date string in YYYY-MM-DD format.
+        time_windows: List of time window lengths.
 
     Returns:
         Output data frame.
@@ -44,7 +46,66 @@ def get_output_df(time_series_df: pd.DataFrame, date_str: str) -> pd.DataFrame:
     # return pd.DataFrame(
     #     [[high_price, low_price, vwap, volume_total, weekday]],
     #     columns=['high_price', 'low_price', 'vwap', 'volume_total', 'weekday'])
-    return pd.DataFrame([[0.0]], columns=['foobar'])
+
+    # logger = logging.getLogger(__name__)
+    # logger.info(str(time_windows))
+
+    output_df = pd.DataFrame({
+        'timestamp':
+        pd.Series(time_series_df['timestamp'], dtype='float64'),
+        'high_price_day':
+        pd.Series([], dtype='float64'),
+        'low_price_day':
+        pd.Series([], dtype='float64'),
+        'volatility_day':
+        pd.Series([], dtype='float64'),
+        'vwap_day':
+        pd.Series([], dtype='float64'),
+        'volume_total_day':
+        pd.Series([], dtype='Int64'),
+        'volume_aggressive_buy_day':
+        pd.Series([], dtype='Int64'),
+        'volume_aggressive_sell_day':
+        pd.Series([], dtype='Int64'),
+        'message_count_quote_day':
+        pd.Series([], dtype='Int64'),
+        'message_count_trade_day':
+        pd.Series([], dtype='Int64')
+    })
+    for i in time_windows:
+        time_window_df = pd.DataFrame({
+            'high_price_' + str(i):
+            pd.Series([], dtype='float64'),
+            'low_price_' + str(i):
+            pd.Series([], dtype='float64'),
+            'volatility_' + str(i):
+            pd.Series([], dtype='float64'),
+            'moving_average_' + str(i):
+            pd.Series([], dtype='float64'),
+            'moving_average_weighted_' + str(i):
+            pd.Series([], dtype='float64'),
+            'bid_ask_size_median_' + str(i):
+            pd.Series([], dtype='Int64'),
+            'bid_ask_spread_median_' + str(i):
+            pd.Series([], dtype='float64'),
+            'vwap_' + str(i):
+            pd.Series([], dtype='float64'),
+            'volume_price_dict_' + str(i):
+            pd.Series([], dtype='object'),
+            'volume_total_' + str(i):
+            pd.Series([], dtype='Int64'),
+            'volume_aggressive_buy_' + str(i):
+            pd.Series([], dtype='Int64'),
+            'volume_aggressive_sell_' + str(i):
+            pd.Series([], dtype='Int64'),
+            'message_count_quote_' + str(i):
+            pd.Series([], dtype='Int64'),
+            'message_count_trade_' + str(i):
+            pd.Series([], dtype='Int64')
+        })
+        output_df = pd.concat([output_df, time_window_df], axis=1)
+
+    return output_df
 
 
 def main_lambda(event: dict, context) -> None:
@@ -69,8 +130,7 @@ def main_lambda(event: dict, context) -> None:
         time_series_df = pd.read_csv(f)
 
     # Create and upload output data frame.
-    date_str, _ = event['s3_key_input'].split('/')[-3:-1]
-    output_df = get_output_df(time_series_df, date_str)
+    output_df = get_output_df(time_series_df, event['time_windows'])
     reup_utils.upload_s3_object(
         event['s3_bucket'], event['s3_key_output'],
         gzip.compress(output_df.to_csv(index=False).encode()))
