@@ -101,12 +101,21 @@ def get_output_df(time_series_df: pd.DataFrame,
             output_df.at[i, 'high_price_day'] = high_price_day
             output_df.at[i, 'low_price_day'] = low_price_day
 
-    # volume_total = time_series_df['volume_total'].sum()
-    # vwap = (time_series_df['vwap'] *
-    #         time_series_df['volume_total']).sum() / volume_total
-    # weekday = datetime.datetime.strptime(date_str, '%Y-%m-%d').weekday()
-
-    # logger.info(str(time_windows))
+    output_df['volatility_day'] = time_series_df['last_trade_price'].expanding(
+    ).std().values
+    output_df['vwap_day'] = (
+        (time_series_df['vwap'] * time_series_df['volume_total']).cumsum() /
+        time_series_df['volume_total'].cumsum()).values
+    output_df['volume_total_day'] = time_series_df['volume_total'].cumsum(
+    ).values
+    output_df['volume_aggressive_buy_day'] = time_series_df[
+        'volume_aggressive_buy'].cumsum().values
+    output_df['volume_aggressive_sell_day'] = time_series_df[
+        'volume_aggressive_sell'].cumsum().values
+    output_df['message_count_quote_day'] = time_series_df[
+        'message_count_quote'].cumsum().values
+    output_df['message_count_trade_day'] = time_series_df[
+        'message_count_trade'].cumsum().values
 
     return output_df
 
