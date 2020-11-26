@@ -3,7 +3,6 @@
 and saves in CSV format.
 
 """
-import datetime
 import gzip
 import json
 import logging
@@ -16,7 +15,8 @@ import pandas as pd
 import reup_utils
 
 
-def get_output_df(time_series_df: pd.DataFrame, time_windows: List[int]) -> pd.DataFrame:
+def get_output_df(time_series_df: pd.DataFrame,
+                  time_windows: List[int]) -> pd.DataFrame:
     """Create output data frame from time series data, calculating features for
     trailing time windows using the provided lengths.
 
@@ -28,28 +28,9 @@ def get_output_df(time_series_df: pd.DataFrame, time_windows: List[int]) -> pd.D
         Output data frame.
 
     """
-    # volume_price_dicts = time_series_df.loc[
-    #     time_series_df['volume_price_dict'].notna(), 'volume_price_dict']
-    # high_price = np.finfo(np.float64).min
-    # low_price = np.finfo(np.float64).max
-    # for json_str in volume_price_dicts:
-    #     json_dict = json.loads(json_str)
-    #     for price in json_dict.keys():
-    #         high_price = np.max([high_price, np.float64(price)])
-    #         low_price = np.min([low_price, np.float64(price)])
+    logger = logging.getLogger(__name__)
 
-    # volume_total = time_series_df['volume_total'].sum()
-    # vwap = (time_series_df['vwap'] *
-    #         time_series_df['volume_total']).sum() / volume_total
-    # weekday = datetime.datetime.strptime(date_str, '%Y-%m-%d').weekday()
-
-    # return pd.DataFrame(
-    #     [[high_price, low_price, vwap, volume_total, weekday]],
-    #     columns=['high_price', 'low_price', 'vwap', 'volume_total', 'weekday'])
-
-    # logger = logging.getLogger(__name__)
-    # logger.info(str(time_windows))
-
+    # Init empty data frame with same number of rows as time series data frame.
     output_df = pd.DataFrame({
         'timestamp':
         pd.Series(time_series_df['timestamp'], dtype='float64'),
@@ -104,6 +85,28 @@ def get_output_df(time_series_df: pd.DataFrame, time_windows: List[int]) -> pd.D
             pd.Series([], dtype='Int64')
         })
         output_df = pd.concat([output_df, time_window_df], axis=1)
+
+    # Populate features cumulative for the whole day.
+    logger.info('Populating day values')
+    high_price_day = np.finfo(np.float64).min
+    low_price_day = np.finfo(np.float64).max
+    for i in range(len(output_df)):
+        if pd.notna(time_series_df.at[i, 'volume_price_dict']):
+            for price in json.loads(
+                    time_series_df.at[i, 'volume_price_dict']).keys():
+                high_price_day = np.max([high_price_day, np.float64(price)])
+                low_price_day = np.min([low_price_day, np.float64(price)])
+
+        if high_price_day != np.finfo(np.float64).min:
+            output_df.at[i, 'high_price_day'] = high_price_day
+            output_df.at[i, 'low_price_day'] = low_price_day
+
+    # volume_total = time_series_df['volume_total'].sum()
+    # vwap = (time_series_df['vwap'] *
+    #         time_series_df['volume_total']).sum() / volume_total
+    # weekday = datetime.datetime.strptime(date_str, '%Y-%m-%d').weekday()
+
+    # logger.info(str(time_windows))
 
     return output_df
 
