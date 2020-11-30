@@ -117,21 +117,69 @@ def get_output_df(time_series_df: pd.DataFrame,
     output_df['message_count_trade_day'] = time_series_df[
         'message_count_trade'].cumsum().values
 
-    # Populate values for time windows.
+    # Populate values for time windows. Note that rolling method returns floats,
+    # so need to cast to Int64 where that is desired.
     for time_window in time_windows:
         logger.info('Populating values for time window | %s',
                     'time_window: {}'.format(time_window))
 
         # for i in range(time_window - 1, len(output_df)):
 
+        # 'high_price_' + str(i):
+        # pd.Series([], dtype='float64'),
+
+        # 'low_price_' + str(i):
+        # pd.Series([], dtype='float64'),
+
+        output_df['volatility_' + str(time_window)] = time_series_df[
+            'last_trade_price'].rolling(time_window).std().values
+        output_df['moving_average_' + str(time_window)] = time_series_df[
+            'last_trade_price'].rolling(time_window).mean().values
+
+        # Y 'moving_average_weighted_' + str(i):
+        # pd.Series([], dtype='float64'),
+        # weights = np.arange(1, time_window + 1)
+        # output_df['moving_average_weighted' +
+        #           str(time_window)] = time_series_df[
+        #               'last_trade_price'].rolling(time_window).apply(
+        #                   lambda x: np.dot(x, weights) / weights.sum(),
+        #                   raw=True).values
+        # output_df[
+        #     'moving_average_weighted' +
+        #     str(time_window)] = time_series_df['last_trade_price'].rolling(
+        #         time_window).apply(lambda x, y=time_window: np.dot(
+        #             x, np.arange(1, y + 1)) / np.arange(1, y + 1).sum(),
+        #                            raw=True).values
+
+        # Y 'bid_ask_size_median_' + str(i):
+        # pd.Series([], dtype='Int64'),
+
+        # Y 'bid_ask_spread_median_' + str(i):
+        # pd.Series([], dtype='float64'),
+
+        # Y 'vwap_' + str(i):
+        # pd.Series([], dtype='float64'),
+
+        # 'volume_price_dict_' + str(i):
+        # pd.Series([], dtype='object'),
+
         output_df['volume_total_' +
                   str(time_window)] = time_series_df['volume_total'].rolling(
                       time_window).sum().astype('Int64').values
-
-        # def wma(df, column='close', n=20, add_col=False):
-        # weights = np.arange(1, n + 1)
-        # wmas = df[column].rolling(n).apply(lambda x: np.dot(x, weights) /
-        #                                    weights.sum(), raw=True).to_list()
+        output_df['volume_aggressive_buy_' + str(
+            time_window)] = time_series_df['volume_aggressive_buy'].rolling(
+                time_window).sum().astype('Int64').values
+        output_df['volume_aggressive_sell_' + str(
+            time_window)] = time_series_df['volume_aggressive_sell'].rolling(
+                time_window).sum().astype('Int64').values
+        output_df[
+            'message_count_quote_' +
+            str(time_window)] = time_series_df['message_count_quote'].rolling(
+                time_window).sum().astype('Int64').values
+        output_df[
+            'message_count_trade_' +
+            str(time_window)] = time_series_df['message_count_trade'].rolling(
+                time_window).sum().astype('Int64').values
 
     return output_df
 
