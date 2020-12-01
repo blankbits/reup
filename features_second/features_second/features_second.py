@@ -144,12 +144,12 @@ def get_output_df(time_series_df: pd.DataFrame,
         #               'last_trade_price'].rolling(time_window).apply(
         #                   lambda x: np.dot(x, weights) / weights.sum(),
         #                   raw=True).values
-        # output_df[
-        #     'moving_average_weighted' +
-        #     str(time_window)] = time_series_df['last_trade_price'].rolling(
-        #         time_window).apply(lambda x, y=time_window: np.dot(
-        #             x, np.arange(1, y + 1)) / np.arange(1, y + 1).sum(),
-        #                            raw=True).values
+        output_df[
+            'moving_average_weighted_' +
+            str(time_window)] = time_series_df['last_trade_price'].rolling(
+                time_window).apply(lambda x, y=time_window: np.dot(
+                    x, np.arange(1, y + 1)) / np.arange(1, y + 1).sum(),
+                                   raw=True).values
 
         # Y 'bid_ask_size_median_' + str(i):
         # pd.Series([], dtype='Int64'),
