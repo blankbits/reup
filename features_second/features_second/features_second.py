@@ -30,7 +30,7 @@ def get_output_df(time_series_df: pd.DataFrame,
     """
     logger = logging.getLogger(__name__)
 
-    # Init empty data frame with same number of rows as time series data frame.
+    # Init output data frame with same number of rows as time series data frame.
     output_df = pd.DataFrame({
         'timestamp':
         pd.Series(time_series_df['timestamp'], dtype='float64'),
@@ -65,14 +65,14 @@ def get_output_df(time_series_df: pd.DataFrame,
             pd.Series([], dtype='float64'),
             'moving_average_weighted_' + str(i):
             pd.Series([], dtype='float64'),
-            'bid_ask_size_median_' + str(i):
+            'bid_size_median_' + str(i):
+            pd.Series([], dtype='Int64'),
+            'ask_size_median_' + str(i):
             pd.Series([], dtype='Int64'),
             'bid_ask_spread_median_' + str(i):
             pd.Series([], dtype='float64'),
             'vwap_' + str(i):
             pd.Series([], dtype='float64'),
-            'volume_price_dict_' + str(i):
-            pd.Series([], dtype='object'),
             'volume_total_' + str(i):
             pd.Series([], dtype='Int64'),
             'volume_aggressive_buy_' + str(i):
@@ -85,6 +85,23 @@ def get_output_df(time_series_df: pd.DataFrame,
             pd.Series([], dtype='Int64')
         })
         output_df = pd.concat([output_df, time_window_df], axis=1)
+
+    # # Create temporary data frame to make calculations easier.
+    # temp_df = pd.DataFrame({
+    #     'timestamp':
+    #     pd.Series(time_series_df['timestamp'], dtype='float64'),
+    #     'high_price':
+    #     pd.Series([], dtype='float64'),
+    #     'low_price':
+    #     pd.Series([], dtype='float64'),
+    #     'bid_ask_size':
+    #     pd.Series([], dtype='Int64'),
+    #     'bid_ask_spread':
+    #     pd.Series([], dtype='float64'),
+    #     # 'bid_ask_size':
+    #     # pd.Series([], dtype='Int64'),
+
+    # })
 
     # Populate values cumulative for the whole day.
     logger.info('Populating values cumulative for the whole day')
@@ -123,8 +140,6 @@ def get_output_df(time_series_df: pd.DataFrame,
         logger.info('Populating values for time window | %s',
                     'time_window: {}'.format(time_window))
 
-        # for i in range(time_window - 1, len(output_df)):
-
         # 'high_price_' + str(i):
         # pd.Series([], dtype='float64'),
 
@@ -135,33 +150,24 @@ def get_output_df(time_series_df: pd.DataFrame,
             'last_trade_price'].rolling(time_window).std().values
         output_df['moving_average_' + str(time_window)] = time_series_df[
             'last_trade_price'].rolling(time_window).mean().values
-
-        # Y 'moving_average_weighted_' + str(i):
-        # pd.Series([], dtype='float64'),
-        # weights = np.arange(1, time_window + 1)
-        # output_df['moving_average_weighted' +
-        #           str(time_window)] = time_series_df[
-        #               'last_trade_price'].rolling(time_window).apply(
-        #                   lambda x: np.dot(x, weights) / weights.sum(),
-        #                   raw=True).values
         output_df[
             'moving_average_weighted_' +
             str(time_window)] = time_series_df['last_trade_price'].rolling(
                 time_window).apply(lambda x, y=time_window: np.dot(
                     x, np.arange(1, y + 1)) / np.arange(1, y + 1).sum(),
                                    raw=True).values
-
-        # Y 'bid_ask_size_median_' + str(i):
-        # pd.Series([], dtype='Int64'),
+        output_df['bid_size_median_' +
+                  str(time_window)] = time_series_df['bid_size'].rolling(
+                      time_window).median().astype('Int64').values
+        output_df['ask_size_median_' +
+                  str(time_window)] = time_series_df['ask_size'].rolling(
+                      time_window).median().astype('Int64').values
 
         # Y 'bid_ask_spread_median_' + str(i):
         # pd.Series([], dtype='float64'),
 
         # Y 'vwap_' + str(i):
         # pd.Series([], dtype='float64'),
-
-        # 'volume_price_dict_' + str(i):
-        # pd.Series([], dtype='object'),
 
         output_df['volume_total_' +
                   str(time_window)] = time_series_df['volume_total'].rolling(
