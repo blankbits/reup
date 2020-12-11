@@ -86,38 +86,43 @@ def get_output_df(time_series_df: pd.DataFrame,
         })
         output_df = pd.concat([output_df, time_window_df], axis=1)
 
-    # # Create temporary data frame to make calculations easier.
-    # temp_df = pd.DataFrame({
-    #     'timestamp':
-    #     pd.Series(time_series_df['timestamp'], dtype='float64'),
-    #     'high_price':
-    #     pd.Series([], dtype='float64'),
-    #     'low_price':
-    #     pd.Series([], dtype='float64'),
-    #     'bid_ask_size':
-    #     pd.Series([], dtype='Int64'),
-    #     'bid_ask_spread':
-    #     pd.Series([], dtype='float64'),
-    #     # 'bid_ask_size':
-    #     # pd.Series([], dtype='Int64'),
-
-    # })
-
-    # Populate values cumulative for the whole day.
-    logger.info('Populating values cumulative for the whole day')
-    high_price_day = np.finfo(np.float64).min
-    low_price_day = np.finfo(np.float64).max
-    for i in range(len(output_df)):
+    # Create and populate temporary data frame to make vectorizing calculations
+    # easier.
+    temp_df = pd.DataFrame({
+        'timestamp':
+        pd.Series(time_series_df['timestamp'], dtype='float64'),
+        'high_price':
+        pd.Series([], dtype='float64'),
+        'low_price':
+        pd.Series([], dtype='float64'),
+        'bid_ask_spread':
+        pd.Series([], dtype='float64'),
+        'volume_price_product':
+        pd.Series([], dtype='float64'),
+    })
+    for i in range(len(temp_df)):
+        high_price_temp = np.finfo(np.float64).min
+        low_price_temp = np.finfo(np.float64).max
         if pd.notna(time_series_df.at[i, 'volume_price_dict']):
             for price in json.loads(
                     time_series_df.at[i, 'volume_price_dict']).keys():
-                high_price_day = np.max([high_price_day, np.float64(price)])
-                low_price_day = np.min([low_price_day, np.float64(price)])
+                high_price_temp = np.max([high_price_temp, np.float64(price)])
+                low_price_temp = np.min([low_price_temp, np.float64(price)])
 
-        if high_price_day != np.finfo(np.float64).min:
-            output_df.at[i, 'high_price_day'] = high_price_day
-            output_df.at[i, 'low_price_day'] = low_price_day
+        if high_price_temp != np.finfo(np.float64).min:
+            temp_df.at[i, 'high_price'] = high_price_temp
+            temp_df.at[i, 'low_price'] = low_price_temp
 
+    temp_df['bid_ask_spread'] = (time_series_df['ask_price'] -
+                                 time_series_df['bid_price'])
+    temp_df['volume_price_product'] = (time_series_df['volume_total'] *
+                                       time_series_df['vwap'])
+
+    # Populate values cumulative for the whole day.
+    logger.info('Populating values cumulative for the whole day')
+    output_df['high_price_day'] = temp_df['high_price'].expanding().max(
+    ).values
+    output_df['low_price_day'] = temp_df['low_price'].expanding().min().values
     output_df['volatility_day'] = time_series_df['last_trade_price'].expanding(
     ).std().values
     output_df['vwap_day'] = (
@@ -139,13 +144,12 @@ def get_output_df(time_series_df: pd.DataFrame,
     for time_window in time_windows:
         logger.info('Populating values for time window | %s',
                     'time_window: {}'.format(time_window))
-
-        # 'high_price_' + str(i):
-        # pd.Series([], dtype='float64'),
-
-        # 'low_price_' + str(i):
-        # pd.Series([], dtype='float64'),
-
+        output_df['high_price_' +
+                  str(time_window)] = temp_df['high_price'].rolling(
+                      time_window).max().values
+        output_df['low_price_' +
+                  str(time_window)] = temp_df['low_price'].rolling(
+                      time_window).min().values
         output_df['volatility_' + str(time_window)] = time_series_df[
             'last_trade_price'].rolling(time_window).std().values
         output_df['moving_average_' + str(time_window)] = time_series_df[
@@ -162,13 +166,12 @@ def get_output_df(time_series_df: pd.DataFrame,
         output_df['ask_size_median_' +
                   str(time_window)] = time_series_df['ask_size'].rolling(
                       time_window).median().astype('Int64').values
-
-        # Y 'bid_ask_spread_median_' + str(i):
-        # pd.Series([], dtype='float64'),
-
-        # Y 'vwap_' + str(i):
-        # pd.Series([], dtype='float64'),
-
+        output_df['bid_ask_spread_median_' +
+                  str(time_window)] = temp_df['bid_ask_spread'].rolling(
+                      time_window).median().values
+        output_df['vwap_' + str(time_window)] = (
+            temp_df['volume_price_product'].rolling(time_window).sum().values /
+            time_series_df['volume_total'].rolling(time_window).sum().values)
         output_df['volume_total_' +
                   str(time_window)] = time_series_df['volume_total'].rolling(
                       time_window).sum().astype('Int64').values
