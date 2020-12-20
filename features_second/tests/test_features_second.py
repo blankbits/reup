@@ -60,5 +60,32 @@ def test_output_df_volume_total_day(output_df):
     assert output_df.at[9, 'volume_total_day'] == 793936
 
 
-# volume_aggressive_buy_day volume_aggressive_sell_day
-# message_count_quote_day message_count_trade_day
+def test_output_df_volume_aggressive_buy_day(output_df):
+    """Test that volume aggressive buy day is populated correctly.
+
+    """
+    assert output_df.at[6, 'volume_aggressive_buy_day'] == 14056
+
+
+def test_output_df_volume_aggressive_sell_day(output_df):
+    """Test that volume aggressive sell day is populated correctly.
+
+    """
+    assert output_df.at[15, 'volume_aggressive_sell_day'] == 882118
+
+
+def test_output_df_message_count_quote_day(output_df):
+    """Test that message count quote day is populated correctly.
+
+    """
+    assert output_df.at[9, 'message_count_quote_day'] == 2077
+
+
+def test_output_df_message_count_trade_day(output_df):
+    """Test that message count trade day is populated correctly.
+
+    """
+    assert output_df.at[14, 'message_count_trade_day'] == 3389
+
+
+# high_price_3	low_price_3	volatility_3	moving_average_3	moving_average_weighted_3	bid_size_median_3	ask_size_median_3	bid_ask_spread_median_3	vwap_3	volume_total_3	volume_aggressive_buy_3	volume_aggressive_sell_3	message_count_quote_3	message_count_trade_3
