@@ -27,7 +27,7 @@ def download_s3_object(s3_bucket: str,
     """
     logger = logging.getLogger(__name__)
     if not local_path:
-        local_path = '/tmp/{}'.format(uuid.uuid4())
+        local_path = '/tmp/reup-{}'.format(uuid.uuid4())
 
     logger.info('Downloading S3 object | %s',
                 's3_bucket:{}, s3_key:{}'.format(s3_bucket, s3_key))
