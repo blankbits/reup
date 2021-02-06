@@ -22,7 +22,7 @@ def download_s3_object(s3_bucket: str,
     Args:
         s3_bucket: S3 bucket name for object to download.
         s3_key: S3 key for object to download.
-        local_path: Optional local path.
+        local_path (optional): Local path.
 
     Returns:
         Local path for downloaded object.
