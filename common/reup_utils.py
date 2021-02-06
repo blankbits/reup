@@ -3,11 +3,14 @@
 
 """
 import logging
+import os
+import sys
 from typing import Dict, List
 import uuid
 
 import boto3
 import botocore
+import pandas as pd
 
 
 def download_s3_object(s3_bucket: str,
@@ -61,7 +64,9 @@ def upload_s3_object(s3_bucket: str, s3_key: str, data: bytes) -> None:
         raise exception
 
 
-def get_s3_keys(s3_bucket: str, s3_prefix: str) -> List[str]:
+def get_s3_keys(s3_bucket: str,
+                s3_prefix: str,
+                include_folders: bool = False) -> List[str]:
     """Find all the S3 keys in a bucket with a given prefix.
 
     Args:
@@ -92,7 +97,8 @@ def get_s3_keys(s3_bucket: str, s3_prefix: str) -> List[str]:
 
         if response['KeyCount'] > 0:
             for item in response['Contents']:
-                s3_keys.append(item['Key'])
+                if not item['Key'].endswith('/') or include_folders:
+                    s3_keys.append(item['Key'])
 
         if response['IsTruncated']:
             continuation_token = response['NextContinuationToken']
@@ -126,3 +132,80 @@ def get_date_symbol_dict(s3_keys: List[str],
             date_symbol_dict[date] = [symbol]
 
     return date_symbol_dict
+
+
+class Universe():
+    """A universe of symbols which changes over time.
+
+    Each change is represented by an S3 object whose key ends in YYYY-MM-DD.csv
+    format. The constituents of the universe on any given date are contained in
+    the most recent CSV file on or prior to that date.
+
+    """
+    def __init__(self, s3_bucket: str, s3_prefix: str):
+        """Load data from S3 into memory once at initialization.
+
+        Args:
+            s3_bucket: S3 bucket name.
+            s3_prefix: S3 prefix preceding the universe CSV files and no other
+                objects.
+
+        """
+        self._dates_sorted: List[str] = []
+        self._dates_dfs: Dict[str, pd.DataFrame] = {}
+
+        s3_keys = get_s3_keys(s3_bucket, s3_prefix)
+        for key in s3_keys:
+            date = key[-14:-4]
+            self._dates_sorted.append(date)
+
+            local_path = download_s3_object(s3_bucket, key)
+            with open(local_path, 'rb') as f:
+                self._dates_dfs[date] = pd.read_csv(f)
+
+            os.remove(local_path)
+
+        self._dates_sorted.sort()
+
+    def _get_most_recent_universe_date(self, date: str) -> str:
+        """Find the most recent universe date on or prior to given date.
+
+        Args:
+            date: YYYY-MM-DD formatted date.
+
+        Returns:
+            YYYY-MM-DD formatted date.
+
+        """
+        logger = logging.getLogger(__name__)
+        for i in range(len(self._dates_sorted) - 1, -1, -1):
+            if self._dates_sorted[i] <= date:
+                return self._dates_sorted[i]
+
+        logger.error('No universe date exists on or prior to given date')
+        sys.exit(1)
+
+    def get_symbol_df(self, date: str) -> pd.DataFrame:
+        """Return dataframe of universe constituents on a given date.
+
+        Args:
+            date: YYYY-MM-DD formatted date.
+
+        Returns:
+            Dataframe.
+
+        """
+        universe_date = self._get_most_recent_universe_date(date)
+        return self._dates_dfs[universe_date]
+
+    def get_symbol_list(self, date: str) -> List[str]:
+        """Return symbol list of universe constituents on a given date.
+
+        Args:
+            date: YYYY-MM-DD formatted date.
+
+        Returns:
+            List of str.
+
+        """
+        return self.get_symbol_df(date)['symbol'].tolist()
