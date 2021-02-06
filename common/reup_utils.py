@@ -72,6 +72,9 @@ def get_s3_keys(s3_bucket: str,
     Args:
         s3_bucket: Name of S3 bucket.
         s3_prefix: Prefix of S3 keys used to filter results.
+        include_folders (optional): Determines whether objects with trailing '/'
+            in their key are included. Generally these are zero byte
+            placeholders which can interfere with behavior.
 
     Returns:
         List of S3 keys.
