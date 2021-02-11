@@ -8,7 +8,7 @@ import logging.config
 import os
 import sys
 import time
-from typing import Callable, Dict, List
+from typing import Dict, List
 import uuid
 
 import boto3
@@ -218,7 +218,7 @@ class Universe():
         return self.get_symbol_df(date)['symbol'].tolist()
 
 
-class LambdaInvoke():
+class LambdaInvokeSimple():
     """Invokes a Lambda function async for specified dates and symbols.
 
     Implements common functionality for looping through through dates and
@@ -226,14 +226,10 @@ class LambdaInvoke():
     triggered in batches.
 
     """
-    @staticmethod
-    def _get_lambda_payload_default(config: dict, lambda_event: dict,
-                                    date: str, symbol: str) -> bytes:
+    def get_lambda_payload(self, date: str, symbol: str) -> bytes:
         """Build the Lambda payload for a function invocation.
 
         Args:
-            config: Configuration for the Lambda invoke script.
-            lambda_event: Template Lambda event to be populated.
             date: Date for this invocation in YYYY-MM-DD format.
             symbol: Symbol for this invocation.
 
@@ -241,46 +237,40 @@ class LambdaInvoke():
             JSON bytes to be used as Lambda payload.
 
         """
-        payload = lambda_event.copy()
-        payload['dates'] = [date]
-        payload['symbols'] = [symbol]
-        payload['download_location'] = config['download_location']
-        return json.dumps(payload).encode()
 
-    @staticmethod
-    def _get_pending_invocations_default(
-            config: dict, lambda_event: dict,
-            date_symbol_dict: Dict[str, List[str]]) -> Dict[str, List[str]]:
+        self._lambda_event['s3_bucket'] = self._config['s3_bucket']
+        self._lambda_event['s3_key_input'] = (
+            self._config['s3_key_input_prefix'] + date + '/' + symbol + '/' +
+            self._config['s3_key_input_suffix'])
+        self._lambda_event['s3_key_output'] = (
+            self._config['s3_key_output_prefix'] + date + '/' + symbol + '/' +
+            self._config['s3_key_output_suffix'])
+        return json.dumps(self._lambda_event).encode()
+
+    def get_pending_invocations(
+            self, date_symbol_dict: Dict[str,
+                                         List[str]]) -> Dict[str, List[str]]:
         """Find pending Lambda invocations by checking whether output S3 objects
         exist for the given dates, symbols, and other parameters. Returns the
         dates and symbols which are missing S3 objects.
 
         Args:
-            config: Configuration for the Lambda invoke script.
-            lambda_event: Template Lambda event to be populated.
             date_symbol_dict: Dict with date keys and symbol list values.
 
         Returns:
             Dict with date keys and symbol list values.
 
         """
-        s3_bucket = config['download_location'].split('/')[0]
-        s3_key_prefix = '/'.join(config['download_location'].split('/')[1:])
-        s3_keys = set(get_s3_keys(s3_bucket, s3_key_prefix))
+        s3_keys = set(
+            get_s3_keys(self._config['s3_bucket'],
+                        self._config['s3_key_output_prefix']))
 
         pending_date_symbol_dict: Dict[str, List[str]] = {}
         for date in sorted(date_symbol_dict.keys()):
             for symbol in sorted(date_symbol_dict[date]):
-                s3_key_quotes = '/'.join([
-                    s3_key_prefix, date, symbol,
-                    lambda_event['quotes_csv_filename']
-                ])
-                s3_key_trades = '/'.join([
-                    s3_key_prefix, date, symbol,
-                    lambda_event['trades_csv_filename']
-                ])
-                if (s3_key_quotes not in s3_keys
-                        or s3_key_trades not in s3_keys):
+                s3_key = (self._config['s3_key_output_prefix'] + date + '/' +
+                          symbol + '/' + self._config['s3_key_output_suffix'])
+                if s3_key not in s3_keys:
                     if date in pending_date_symbol_dict:
                         if pending_date_symbol_dict[date][-1] != symbol:
                             pending_date_symbol_dict[date].append(symbol)
@@ -289,34 +279,7 @@ class LambdaInvoke():
 
         return pending_date_symbol_dict
 
-    def get_pending_invocations(
-            self, date_symbol_dict: Dict[str,
-                                         List[str]]) -> Dict[str, List[str]]:
-        """Calls the corresponding static function with values from this object
-        instance. This is a convenience to provide a cleaner API.
-
-        Args:
-            date_symbol_dict: Dict with date keys and symbol list values.
-
-        Returns:
-            Dict with date keys and symbol list values.
-
-        """
-        return self._get_pending_invocations(self._config, self._lambda_event,
-                                             date_symbol_dict)
-
-    def __init__(
-        self,
-        config_file: str,
-        lambda_event_file: str,
-        get_lambda_payload: Callable[
-            [dict, dict, str, str],
-            bytes] = _get_lambda_payload_default.__func__,  # type: ignore
-        get_pending_invocations: Callable[
-            [dict, dict, Dict[str, List[str]]],
-            Dict[str, List[str]]] = _get_pending_invocations_default.
-        __func__  # type: ignore
-    ):
+    def __init__(self, config_file: str, lambda_event_file: str):
         """Load configuration files and set up object behavior.
 
         Args:
@@ -324,21 +287,12 @@ class LambdaInvoke():
                 behavior.
             lambda_event_file: Path to JSON file which is a template Lambda
                 payload whose values may be overwritten.
-            get_lambda_payload (optional): Function to generate Lambda payloads.
-            get_pending_invocations (optional): Function to find dates and
-                symbols representing pending Lambda invocations.
-
         """
         # Load config YAML file and Lambda event JSON file.
         with open(config_file, 'r') as f:
             self._config = yaml.safe_load(f.read())
         with open(lambda_event_file, 'r') as f:
             self._lambda_event = json.load(f)
-
-        # Set functions for generating Lambda payloads and determining pending
-        # invocations.
-        self._get_lambda_payload = get_lambda_payload
-        self._get_pending_invocations = get_pending_invocations
 
         # Initialize logger.
         with open(self._config['logging_config'], 'r') as f:
@@ -364,9 +318,7 @@ class LambdaInvoke():
                 response = client.invoke(
                     FunctionName=self._config['lambda_function'],
                     InvocationType='Event',
-                    Payload=self._get_lambda_payload(self._config,
-                                                     self._lambda_event, date,
-                                                     symbol))
+                    Payload=self.get_lambda_payload(date, symbol))
 
                 # Exit if invoke is unsuccessful.
                 if response['ResponseMetadata']['HTTPStatusCode'] != 202:
