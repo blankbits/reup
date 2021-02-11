@@ -38,13 +38,24 @@ date_symbol_dict = {
 #     lambda_invoke.run(pending_date_symbol_dict)
 
 
-# Run features second.
+# # Run features second.
+# lambda_invoke = reup_utils.LambdaInvokeSimple(
+#     '../features_second/features_second/lambda_invoke_config.yaml',
+#     '../features_second/features_second/lambda_event.json')
+# pending_date_symbol_dict = lambda_invoke.get_pending_invocations(
+#     date_symbol_dict)
+# print(pending_date_symbol_dict)
+# if len(pending_date_symbol_dict) > 0:
+#     lambda_invoke.run(pending_date_symbol_dict)
+
+
+# Run features day.
 lambda_invoke = reup_utils.LambdaInvokeSimple(
-    '../features_second/features_second/lambda_invoke_config.yaml',
-    '../features_second/features_second/lambda_event.json')
+    '../features_day/features_day/lambda_invoke_config.yaml',
+    '../features_day/features_day/lambda_event.json')
 pending_date_symbol_dict = lambda_invoke.get_pending_invocations(
     date_symbol_dict)
 print(pending_date_symbol_dict)
 if len(pending_date_symbol_dict) > 0:
     lambda_invoke.run(pending_date_symbol_dict)
-    
+

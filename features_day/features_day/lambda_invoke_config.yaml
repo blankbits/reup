@@ -1,11 +1,11 @@
-max_event_count: 600
-sleep_seconds: 30
-
 lambda_function: features_day
 s3_bucket: reup
-s3_key_input_prefix: historical-data/time-series/
+# s3_key_input_prefix: historical-data/time-series/
+s3_key_input_prefix: scratch/historical-data/time-series/
 s3_key_input_suffix: time-series.csv.gz
-s3_key_output_prefix: features/day/
+# s3_key_output_prefix: features/day/
+s3_key_output_prefix: scratch/features/day/
 s3_key_output_suffix: features.csv.gz
-
-logging_config: ../../common/logging_config_default.yaml
+max_event_count: 600
+sleep_seconds: 30
+logging_config: logging_config_default.yaml
