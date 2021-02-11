@@ -313,8 +313,10 @@ class LambdaInvokeSimple():
         for date in sorted(date_symbol_dict.keys()):
             for symbol in sorted(date_symbol_dict[date]):
                 # Invoke Lambda function async.
-                logger.info('Invoking Lambda function async | %s',
-                            'date:{}, symbol:{}'.format(date, symbol))
+                logger.info(
+                    'Invoking Lambda function async | %s',
+                    'lambda_function:{}, date:{}, symbol:{}'.format(
+                        self._config['lambda_function'], date, symbol))
                 response = client.invoke(
                     FunctionName=self._config['lambda_function'],
                     InvocationType='Event',
