@@ -115,32 +115,6 @@ def get_s3_keys(s3_bucket: str,
     return s3_keys
 
 
-def get_date_symbol_dict(s3_keys: List[str],
-                         s3_prefix: str) -> Dict[str, List[str]]:
-    """Parse S3 keys to find the set of unique date and symbol pairs.
-
-    Args:
-        s3_keys: List of S3 keys.
-        s3_prefix: Prefix preceding the date and symbol in S3 keys.
-
-    Returns:
-        Dict with date keys and symbol list values.
-
-    """
-    s3_keys_sorted = s3_keys.copy()
-    s3_keys_sorted.sort()
-    date_symbol_dict: Dict[str, List[str]] = {}
-    for key in s3_keys_sorted:
-        date, symbol = key.replace(s3_prefix, '').split('/')[:2]
-        if date in date_symbol_dict:
-            if date_symbol_dict[date][-1] != symbol:
-                date_symbol_dict[date].append(symbol)
-        else:
-            date_symbol_dict[date] = [symbol]
-
-    return date_symbol_dict
-
-
 class Universe():
     """A universe of symbols which changes over time.
 
