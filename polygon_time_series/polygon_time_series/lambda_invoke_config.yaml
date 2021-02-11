@@ -1,11 +1,11 @@
 lambda_function: polygon_time_series
 s3_bucket: reup
-# s3_key_input_prefix: third-party/polygon-tick-data/
-s3_key_input_prefix: scratch/third-party/polygon-tick-data/
+s3_key_input_prefix: third-party/polygon-tick-data/
+# s3_key_input_prefix: scratch/third-party/polygon-tick-data/
 s3_key_quotes_suffix: quotes.csv.gz
 s3_key_trades_suffix: trades.csv.gz
-# s3_key_output_prefix: historical-data/time-series/
-s3_key_output_prefix: scratch/historical-data/time-series/
+s3_key_output_prefix: historical-data/time-series/
+# s3_key_output_prefix: scratch/historical-data/time-series/
 s3_key_output_suffix: time-series.csv.gz
 max_event_count: 600
 sleep_seconds: 120
