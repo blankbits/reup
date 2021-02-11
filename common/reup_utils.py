@@ -211,7 +211,6 @@ class LambdaInvokeSimple():
             JSON bytes to be used as Lambda payload.
 
         """
-
         self._lambda_event['s3_bucket'] = self._config['s3_bucket']
         self._lambda_event['s3_key_input'] = (
             self._config['s3_key_input_prefix'] + date + '/' + symbol + '/' +
