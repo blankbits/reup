@@ -200,6 +200,25 @@ class LambdaInvokeSimple():
     triggered in batches.
 
     """
+    def __init__(self, config_file: str, lambda_event_file: str):
+        """Load configuration files and set up object behavior.
+
+        Args:
+            config_file: Path to YAML file which determines batching and other
+                behavior.
+            lambda_event_file: Path to JSON file which is a template Lambda
+                payload whose values may be overwritten.
+        """
+        # Load config YAML file and Lambda event JSON file.
+        with open(config_file, 'r') as f:
+            self._config = yaml.safe_load(f.read())
+        with open(lambda_event_file, 'r') as f:
+            self._lambda_event = json.load(f)
+
+        # Initialize logger.
+        with open(self._config['logging_config'], 'r') as f:
+            logging.config.dictConfig(yaml.safe_load(f.read()))
+
     def get_lambda_payload(self, date: str, symbol: str) -> bytes:
         """Build the Lambda payload for a function invocation.
 
@@ -251,25 +270,6 @@ class LambdaInvokeSimple():
                         pending_date_symbol_dict[date] = [symbol]
 
         return pending_date_symbol_dict
-
-    def __init__(self, config_file: str, lambda_event_file: str):
-        """Load configuration files and set up object behavior.
-
-        Args:
-            config_file: Path to YAML file which determines batching and other
-                behavior.
-            lambda_event_file: Path to JSON file which is a template Lambda
-                payload whose values may be overwritten.
-        """
-        # Load config YAML file and Lambda event JSON file.
-        with open(config_file, 'r') as f:
-            self._config = yaml.safe_load(f.read())
-        with open(lambda_event_file, 'r') as f:
-            self._lambda_event = json.load(f)
-
-        # Initialize logger.
-        with open(self._config['logging_config'], 'r') as f:
-            logging.config.dictConfig(yaml.safe_load(f.read()))
 
     def run(self, date_symbol_dict: Dict[str, List[str]]) -> None:
         """Execute the main logic to invoke Lambda function.
