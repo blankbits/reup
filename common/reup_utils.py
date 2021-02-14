@@ -215,10 +215,6 @@ class LambdaInvokeSimple():
         with open(lambda_event_file, 'r') as f:
             self._lambda_event = json.load(f)
 
-        # Initialize logger.
-        with open(self._config['logging_config'], 'r') as f:
-            logging.config.dictConfig(yaml.safe_load(f.read()))
-
     def get_lambda_payload(self, date: str, symbol: str) -> bytes:
         """Build the Lambda payload for a function invocation.
 

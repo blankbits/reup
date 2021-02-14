@@ -8,4 +8,3 @@ s3_key_output_prefix: scratch/features/day/
 s3_key_output_suffix: features.csv.gz
 max_event_count: 600
 sleep_seconds: 30
-logging_config: logging_config_default.yaml
