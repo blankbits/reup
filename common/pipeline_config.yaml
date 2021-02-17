@@ -1,4 +1,13 @@
-
+dates: [
+  '2020-01-02',
+  '2020-01-03',
+  '2020-01-06',
+  '2020-01-07',
+]
+s3_bucket: 'reup'
+s3_universe_prefixes: [
+  'scratch/universes/scratch/',
+]
 
 # Passed through to logging.config.dictConfig(config).
 logging:
@@ -9,9 +18,9 @@ logging:
   handlers:
     console:
       class: logging.StreamHandler
-      level: DEBUG
+      level: INFO
       formatter: simple
       stream: ext://sys.stdout
   root:
-    level: DEBUG
+    level: INFO
     handlers: [console]

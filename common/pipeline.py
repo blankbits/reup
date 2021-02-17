@@ -34,7 +34,7 @@ def run_stage(lambda_invoke: reup_utils.LambdaInvokeSimple,
             retry_count, retry_seconds))
         time.sleep(retry_seconds)
         retry_count += 1
-        
+
     pending_date_symbol_dict = lambda_invoke.get_pending_invocations(
         date_symbol_dict)
     if len(pending_date_symbol_dict) > 0:
@@ -61,26 +61,40 @@ def main():
     logging.config.dictConfig(config['logging'])
     logger = logging.getLogger(__name__)
 
-    # universe = reup_utils.Universe('reup', 'universes/russell-3000')
-    # print(universe.get_symbol_df('2019-08-08').head())
-    # print(universe.get_symbol_list('2019-08-08')[0:10])
-    date_symbol_dict = {
-        '2020-01-02': ['GOOG', 'SPY'],
-        '2020-01-03': ['GOOG', 'SPY']
-    }
+    # Initialize symbol universes. Do this outside the loop below to prevent
+    # unnecessary S3 round trips.
+    universes: Dict[reup_utils.Universe] = {}
+    for s3_universe_prefix in config['s3_universe_prefixes']:
+        universes[s3_universe_prefix] = reup_utils.Universe(
+            config['s3_bucket'], s3_universe_prefix)
 
-    # logger.info('EAT')
-    # blarg()
-    # return
-    
+    # Loop thru dates and run full pipeline for each date.
+    for date in config['dates']:
+        symbol_list: List[str] = []
+        for s3_universe_prefix in config['s3_universe_prefixes']:
+            symbol_list.extend(
+                universes[s3_universe_prefix].get_symbol_list(date))
+
+        symbol_list = sorted(list(set(symbol_list)))
+
+        # Run polygon tick data.
+        logger.info('Starting pipeline stage for polygon_tick_data | %s',
+                    'date:{}'.format(date))
+        lambda_invoke = ptd_lambda_invoke.LambdaInvoke(
+            '../polygon_tick_data/polygon_tick_data/lambda_invoke_config.yaml',
+            '../polygon_tick_data/polygon_tick_data/lambda_event.json')
+        run_stage(lambda_invoke, {date: symbol_list}, 3, 30)
+
+
+
     # Run polygon tick data.
-    logger.info('Starting pipeline stage for polygon_tick_data')
-    lambda_invoke = ptd_lambda_invoke.LambdaInvoke(
-        '../polygon_tick_data/polygon_tick_data/lambda_invoke_config.yaml',
-        '../polygon_tick_data/polygon_tick_data/lambda_event.json')
-    run_stage(lambda_invoke, date_symbol_dict, 3, 30)
+    # logger.info('Starting pipeline stage for polygon_tick_data')
+    # lambda_invoke = ptd_lambda_invoke.LambdaInvoke(
+    #     '../polygon_tick_data/polygon_tick_data/lambda_invoke_config.yaml',
+    #     '../polygon_tick_data/polygon_tick_data/lambda_event.json')
+    # run_stage(lambda_invoke, date_symbol_dict, 3, 30)
 
-    
+
     # # Run polygon tick data.
     # lambda_invoke = ptd_lambda_invoke.LambdaInvoke(
     #     '../polygon_tick_data/polygon_tick_data/lambda_invoke_config.yaml',
@@ -90,8 +104,8 @@ def main():
     # print(pending_date_symbol_dict)
     # if len(pending_date_symbol_dict) > 0:
     #     lambda_invoke.run(pending_date_symbol_dict)
-    
-    
+
+
     # # Run polygon time series.
     # lambda_invoke = pts_lambda_invoke.LambdaInvoke(
     #     '../polygon_time_series/polygon_time_series/lambda_invoke_config.yaml',
@@ -101,8 +115,8 @@ def main():
     # print(pending_date_symbol_dict)
     # if len(pending_date_symbol_dict) > 0:
     #     lambda_invoke.run(pending_date_symbol_dict)
-    
-    
+
+
     # # Run features second.
     # lambda_invoke = reup_utils.LambdaInvokeSimple(
     #     '../features_second/features_second/lambda_invoke_config.yaml',
@@ -112,8 +126,8 @@ def main():
     # print(pending_date_symbol_dict)
     # if len(pending_date_symbol_dict) > 0:
     #     lambda_invoke.run(pending_date_symbol_dict)
-    
-    
+
+
     # # Run features day.
     # lambda_invoke = reup_utils.LambdaInvokeSimple(
     #     '../features_day/features_day/lambda_invoke_config.yaml',
@@ -123,7 +137,7 @@ def main():
     # print(pending_date_symbol_dict)
     # if len(pending_date_symbol_dict) > 0:
     #     lambda_invoke.run(pending_date_symbol_dict)
-    
+
 
 # If in top-level script environment, run main().
 if __name__ == '__main__':
