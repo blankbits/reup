@@ -1,13 +1,10 @@
 dates: [
   '2020-01-02',
   '2020-01-03',
-  '2020-01-06',
-  '2020-01-07',
-  '2020-01-08',
 ]
-s3_bucket: 'reup'
+s3_bucket: 'reup-scratch'
 s3_universe_prefixes: [
-  'scratch/universes/scratch/',
+  'universes/scratch/',
 ]
 
 polygon_tick_data:
