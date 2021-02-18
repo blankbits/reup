@@ -3,11 +3,36 @@ dates: [
   '2020-01-03',
   '2020-01-06',
   '2020-01-07',
+  '2020-01-08',
 ]
 s3_bucket: 'reup'
 s3_universe_prefixes: [
   'scratch/universes/scratch/',
 ]
+
+polygon_tick_data:
+  lambda_invoke_config: '../polygon_tick_data/polygon_tick_data/lambda_invoke_config.yaml'
+  lambda_event: '../polygon_tick_data/polygon_tick_data/lambda_event.json'
+  max_retry_count: 3
+  retry_seconds: 300
+
+polygon_time_series:
+  lambda_invoke_config: '../polygon_time_series/polygon_time_series/lambda_invoke_config.yaml'
+  lambda_event: '../polygon_time_series/polygon_time_series/lambda_event.json'
+  max_retry_count: 3
+  retry_seconds: 300
+
+features_second:
+  lambda_invoke_config: '../features_second/features_second/lambda_invoke_config.yaml'
+  lambda_event: '../features_second/features_second/lambda_event.json'
+  max_retry_count: 3
+  retry_seconds: 100
+
+features_day:
+  lambda_invoke_config: '../features_day/features_day/lambda_invoke_config.yaml'
+  lambda_event: '../features_day/features_day/lambda_event.json'
+  max_retry_count: 3
+  retry_seconds: 100
 
 # Passed through to logging.config.dictConfig(config).
 logging:
