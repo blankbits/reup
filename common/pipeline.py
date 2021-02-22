@@ -86,25 +86,33 @@ def main():
     # Initialize LambdaInvoke objects for each pipeline stage and add to list in
     # the order that the pipeline stages will run.
     lambda_invokers: List[Tuple[str, reup_utils.LambdaInvokeSimple]] = []
-    lambda_invokers.append(
-        ('polygon_tick_data',
-         ptd_lambda_invoke.LambdaInvoke(
-             config['polygon_tick_data']['lambda_invoke_config'],
-             config['polygon_tick_data']['lambda_event'])))
-    lambda_invokers.append(
-        ('polygon_time_series',
-         pts_lambda_invoke.LambdaInvoke(
-             config['polygon_time_series']['lambda_invoke_config'],
-             config['polygon_time_series']['lambda_event'])))
-    lambda_invokers.append(
-        ('features_second',
-         reup_utils.LambdaInvokeSimple(
-             config['features_second']['lambda_invoke_config'],
-             config['features_second']['lambda_event'])))
-    lambda_invokers.append(('features_day',
-                            reup_utils.LambdaInvokeSimple(
-                                config['features_day']['lambda_invoke_config'],
-                                config['features_day']['lambda_event'])))
+    if config['polygon_tick_data']['is_enabled']:
+        lambda_invokers.append(
+            ('polygon_tick_data',
+             ptd_lambda_invoke.LambdaInvoke(
+                 config['polygon_tick_data']['lambda_invoke_config'],
+                 config['polygon_tick_data']['lambda_event'])))
+
+    if config['polygon_time_series']['is_enabled']:
+        lambda_invokers.append(
+            ('polygon_time_series',
+             pts_lambda_invoke.LambdaInvoke(
+                 config['polygon_time_series']['lambda_invoke_config'],
+                 config['polygon_time_series']['lambda_event'])))
+
+    if config['features_second']['is_enabled']:
+        lambda_invokers.append(
+            ('features_second',
+             reup_utils.LambdaInvokeSimple(
+                 config['features_second']['lambda_invoke_config'],
+                 config['features_second']['lambda_event'])))
+
+    if config['features_day']['is_enabled']:
+        lambda_invokers.append(
+            ('features_day',
+             reup_utils.LambdaInvokeSimple(
+                 config['features_day']['lambda_invoke_config'],
+                 config['features_day']['lambda_event'])))
 
     # Loop thru dates and run full pipeline for each date.
     for date in config['dates']:
