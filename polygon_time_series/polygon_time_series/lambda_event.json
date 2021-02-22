@@ -1,5 +1,5 @@
 {
-    "s3_bucket": "reup",
+    "s3_bucket": "reup-scratch",
     "s3_key_quotes": "third-party/polygon-tick-data/2020-04-01/SPY/quotes.csv.gz",
     "s3_key_trades": "third-party/polygon-tick-data/2020-04-01/SPY/trades.csv.gz",
     "s3_key_output": "historical-data/time-series/time-series.csv.gz",
@@ -30,13 +30,13 @@
         "handlers": {
             "console": {
                 "class": "logging.StreamHandler",
-                "level": "DEBUG",
+                "level": "INFO",
                 "formatter": "simple",
                 "stream": "ext://sys.stdout"
             }
         },
         "root": {
-            "level": "DEBUG",
+            "level": "INFO",
             "handlers": [
                 "console"
             ]

@@ -3,9 +3,9 @@
         "SPY"
     ],
     "dates": [
-        "2020-01-02"
+        "2020-04-01"
     ],
-    "download_location": "reup/third-party/polygon-tick-data",
+    "download_location": "reup-scratch/third-party/polygon-tick-data",
     "quotes_csv_filename": "quotes.csv.gz",
     "trades_csv_filename": "trades.csv.gz",
     "response_limit": 50000,
@@ -19,13 +19,13 @@
         "handlers": {
             "console": {
                 "class": "logging.StreamHandler",
-                "level": "DEBUG",
+                "level": "INFO",
                 "formatter": "simple",
                 "stream": "ext://sys.stdout"
             }
         },
         "root": {
-            "level": "DEBUG",
+            "level": "INFO",
             "handlers": [
                 "console"
             ]
