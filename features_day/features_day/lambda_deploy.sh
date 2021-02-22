@@ -2,7 +2,7 @@
 set -x
 
 # Config.
-third_party_packages="numpy pandas"
+third_party_packages="numpy pandas pyyaml"
 lambda_source_files="features_day.py ../../common/reup_utils.py"
 lambda_function_name="features_day"
 lambda_test_event="lambda_event.json"

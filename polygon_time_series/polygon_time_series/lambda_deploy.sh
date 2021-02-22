@@ -2,7 +2,7 @@
 set -x
 
 # Config.
-third_party_packages="numpy pandas"
+third_party_packages="numpy pandas pyyaml"
 lambda_source_files="polygon_time_series.py ../../common/reup_utils.py"
 lambda_function_name="polygon_time_series"
 lambda_test_event="lambda_event.json"

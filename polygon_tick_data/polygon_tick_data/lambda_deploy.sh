@@ -8,4 +8,4 @@ lambda_function_name="polygon_tick_data"
 lambda_test_event="lambda_event.json"
 
 # Include common script.
-. ../common/lambda_deploy.sh
+. ../../common/lambda_deploy.sh
