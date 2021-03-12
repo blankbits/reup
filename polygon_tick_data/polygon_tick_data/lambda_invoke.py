@@ -49,10 +49,12 @@ class LambdaInvoke(reup_utils.LambdaInvokeSimple):
         s3_bucket = self._config['download_location'].split('/')[0]
         s3_key_prefix = '/'.join(
             self._config['download_location'].split('/')[1:])
-        s3_keys = set(reup_utils.get_s3_keys(s3_bucket, s3_key_prefix))
 
         pending_date_symbol_dict: Dict[str, List[str]] = {}
         for date in sorted(date_symbol_dict.keys()):
+            s3_keys = set(
+                reup_utils.get_s3_keys(s3_bucket,
+                                       s3_key_prefix + '/' + date + '/'))
             for symbol in sorted(date_symbol_dict[date]):
                 s3_key_quotes = '/'.join([
                     s3_key_prefix, date, symbol,

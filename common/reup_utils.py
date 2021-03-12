@@ -248,12 +248,11 @@ class LambdaInvokeSimple():
             Dict with date keys and symbol list values.
 
         """
-        s3_keys = set(
-            get_s3_keys(self._config['s3_bucket'],
-                        self._config['s3_key_output_prefix']))
-
         pending_date_symbol_dict: Dict[str, List[str]] = {}
         for date in sorted(date_symbol_dict.keys()):
+            s3_keys = set(
+                get_s3_keys(self._config['s3_bucket'],
+                            self._config['s3_key_output_prefix'] + date + '/'))
             for symbol in sorted(date_symbol_dict[date]):
                 s3_key = (self._config['s3_key_output_prefix'] + date + '/' +
                           symbol + '/' + self._config['s3_key_output_suffix'])
