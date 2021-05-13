@@ -1,6 +1,6 @@
 lambda_function: features_second
-# s3_bucket: reup
-s3_bucket: reup-scratch
+s3_bucket: reup
+# s3_bucket: reup-scratch
 s3_key_input_prefix: historical-data/time-series/
 s3_key_input_suffix: time-series.csv.gz
 s3_key_output_prefix: features/second/
