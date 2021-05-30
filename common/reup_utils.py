@@ -2,6 +2,7 @@
 """Common utility functions.
 
 """
+import datetime
 import json
 import logging
 import os
@@ -13,6 +14,7 @@ import uuid
 import boto3
 import botocore
 import pandas as pd
+import pytz
 import yaml
 
 
@@ -112,6 +114,26 @@ def get_s3_keys(s3_bucket: str,
             break
 
     return s3_keys
+
+
+def get_timestamp(date_str: str, time_str: str, time_zone_str: str) -> float:
+    """Generate an epoch timestamp for a given date, time, and time zone.
+
+    Args:
+        date_str: Date in YYYY-MM-DD format.
+        time_str: Time in HH:MM:SS 24-hour format.
+        time_zone_str: tz database time zone e.g. 'America/New_York'.
+
+    Returns:
+        Epoch timestamp.
+
+    """
+    date_ints = [int(i) for i in date_str.split('-')]
+    time_ints = [int(i) for i in time_str.split(':')]
+    return pytz.timezone(time_zone_str).localize(
+        datetime.datetime(date_ints[0], date_ints[1], date_ints[2],
+                          time_ints[0], time_ints[1],
+                          time_ints[2])).timestamp()
 
 
 class Universe():
