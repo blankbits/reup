@@ -1,8 +1,8 @@
 {
     "s3_bucket": "reup-scratch",
-    "s3_key_quotes": "third-party/polygon-tick-data/2020-04-01/SPY/quotes.csv.gz",
-    "s3_key_trades": "third-party/polygon-tick-data/2020-04-01/SPY/trades.csv.gz",
-    "s3_key_output": "historical-data/time-series/2020-04-01/SPY/time-series.csv.gz",
+    "s3_key_quotes": "third-party/polygon-tick-data/2020-04-01/AAPL/quotes.csv.gz",
+    "s3_key_trades": "third-party/polygon-tick-data/2020-04-01/AAPL/trades.csv.gz",
+    "s3_key_output": "historical-data/time-series/2020-04-01/AAPL/time-series.csv.gz",
     "discard_trade_conditions": {
         "2": "Average Price Trade",
         "5": "Bunched Sold Trade",

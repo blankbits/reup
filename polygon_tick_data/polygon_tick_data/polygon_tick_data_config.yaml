@@ -1,6 +1,6 @@
 # Comment out the filename lines to skip writing the respective files.
-symbols: ['SPY']
-dates: ['2020-01-02']
+symbols: ['AAPL']
+dates: ['2020-04-01']
 download_location: 'data'
 quotes_csv_filename: 'quotes.csv.gz'
 trades_csv_filename: 'trades.csv.gz'

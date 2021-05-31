@@ -1,5 +1,5 @@
 lambda_function: polygon_tick_data
-download_location: reup/third-party/polygon-tick-data
-# download_location: reup-scratch/third-party/polygon-tick-data
+# download_location: reup/third-party/polygon-tick-data
+download_location: reup-scratch/third-party/polygon-tick-data
 max_event_count: 50
 sleep_seconds: 120
