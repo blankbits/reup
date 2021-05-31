@@ -1,7 +1,15 @@
 {
     "s3_bucket": "reup-scratch",
-    "s3_key_input": "historical-data/time-series/2020-04-01/SPY/time-series.csv.gz",
-    "s3_key_output": "features/day/2020-04-01/SPY/features.csv.gz",
+    "s3_key_input": "historical-data/time-series/2020-04-01/AAPL/time-series.csv.gz",
+    "s3_key_output": "features/day/2020-04-01/AAPL/features.csv.gz",
+    "time_windows": [
+        1,
+        15,
+        60
+    ],
+    "time_zone": "America/New_York",
+    "open_time": "09:30:00",
+    "close_time": "16:00:00",
     "logging": {
         "version": 1,
         "formatters": {

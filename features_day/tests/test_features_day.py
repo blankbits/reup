@@ -21,7 +21,8 @@ def fixture_output_df(time_series_df):
     """Create output data frame from test data.
 
     """
-    return fd.get_output_df(time_series_df, '2020-04-01')
+    return fd.get_output_df(time_series_df, [1, 2], 1585747800.0, 1585747810.0,
+                            2)
 
 
 def test_output_df_high_price(output_df):
@@ -38,18 +39,18 @@ def test_output_df_low_price(output_df):
     assert output_df.at[0, 'low_price'] == 247.92
 
 
-def test_output_df_vwap(output_df):
-    """Test that vwap is populated correctly.
+def test_output_df_vwap_day(output_df):
+    """Test that vwap day is populated correctly.
 
     """
-    assert output_df.at[0, 'vwap'] == 247.97639356156992
+    assert output_df.at[0, 'vwap_day'] == 247.97639356156992
 
 
-def test_output_df_volume_total(output_df):
-    """Test that volume total is populated correctly.
+def test_output_df_volume_total_day(output_df):
+    """Test that volume total day is populated correctly.
 
     """
-    assert output_df.at[0, 'volume_total'] == 917755
+    assert output_df.at[0, 'volume_total_day'] == 917755
 
 
 def test_output_df_weekday(output_df):
