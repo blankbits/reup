@@ -25,6 +25,13 @@ def fixture_output_df(time_series_df):
                             2)
 
 
+def test_output_df_weekday(output_df):
+    """Test that weekday is populated correctly.
+
+    """
+    assert output_df.at[0, 'weekday'] == 2
+
+
 def test_output_df_high_price(output_df):
     """Test that high price is populated correctly.
 
@@ -53,8 +60,57 @@ def test_output_df_volume_total_day(output_df):
     assert output_df.at[0, 'volume_total_day'] == 917755
 
 
-def test_output_df_weekday(output_df):
-    """Test that weekday is populated correctly.
+def test_output_df_vwap_open_1(output_df):
+    """Test that vwap open is populated correctly for window length 1.
 
     """
-    assert output_df.at[0, 'weekday'] == 2
+    assert output_df.at[0, 'vwap_open_1'] == 247.95137560000003
+
+
+def test_output_df_volume_total_open_1(output_df):
+    """Test that volume total open is populated correctly for window length 1.
+
+    """
+    assert output_df.at[0, 'volume_total_open_1'] == 632974
+
+
+def test_output_df_vwap_close_1(output_df):
+    """Test that vwap close is populated correctly for window length 1.
+
+    """
+    assert output_df.at[0, 'vwap_close_1'] == 247.9779063
+
+
+def test_output_df_volume_total_close_1(output_df):
+    """Test that volume total close is populated correctly for window length 1.
+
+    """
+    assert output_df.at[0, 'volume_total_close_1'] == 23399
+
+
+def test_output_df_vwap_open_2(output_df):
+    """Test that vwap open is populated correctly for window length >1.
+
+    """
+    assert output_df.at[0, 'vwap_open_2'] == 247.95632789863333
+
+
+def test_output_df_volume_total_open_2(output_df):
+    """Test that volume total open is populated correctly for window length >1.
+
+    """
+    assert output_df.at[0, 'volume_total_open_2'] == 697443
+
+
+def test_output_df_vwap_close_2(output_df):
+    """Test that vwap close is populated correctly for window length >1.
+
+    """
+    assert output_df.at[0, 'vwap_close_2'] == 247.96845473834776
+
+
+def test_output_df_volume_total_close_2(output_df):
+    """Test that volume total close is populated correctly for window length >1.
+
+    """
+    assert output_df.at[0, 'volume_total_close_2'] == 52801
