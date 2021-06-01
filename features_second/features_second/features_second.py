@@ -126,18 +126,19 @@ def get_output_df(time_series_df: pd.DataFrame,
     output_df['volatility_day'] = time_series_df['last_trade_price'].expanding(
     ).std().values
     output_df['vwap_day'] = (
-        (time_series_df['vwap'] * time_series_df['volume_total']).cumsum() /
-        time_series_df['volume_total'].cumsum()).values
-    output_df['volume_total_day'] = time_series_df['volume_total'].cumsum(
-    ).values
+        (time_series_df['vwap'] *
+         time_series_df['volume_total']).expanding().sum() /
+        time_series_df['volume_total'].expanding().sum()).values
+    output_df['volume_total_day'] = time_series_df['volume_total'].expanding(
+    ).sum().values
     output_df['volume_aggressive_buy_day'] = time_series_df[
-        'volume_aggressive_buy'].cumsum().values
+        'volume_aggressive_buy'].expanding().sum().values
     output_df['volume_aggressive_sell_day'] = time_series_df[
-        'volume_aggressive_sell'].cumsum().values
+        'volume_aggressive_sell'].expanding().sum().values
     output_df['message_count_quote_day'] = time_series_df[
-        'message_count_quote'].cumsum().values
+        'message_count_quote'].expanding().sum().values
     output_df['message_count_trade_day'] = time_series_df[
-        'message_count_trade'].cumsum().values
+        'message_count_trade'].expanding().sum().values
 
     # Populate values for time windows. Note that rolling method returns floats,
     # so need to cast to Int64 where that is desired.
@@ -146,49 +147,58 @@ def get_output_df(time_series_df: pd.DataFrame,
                     'time_window: {}'.format(time_window))
         output_df['high_price_' +
                   str(time_window)] = temp_df['high_price'].rolling(
-                      time_window).max().values
+                      time_window, min_periods=1).max().values
         output_df['low_price_' +
                   str(time_window)] = temp_df['low_price'].rolling(
-                      time_window).min().values
-        output_df['volatility_' + str(time_window)] = time_series_df[
-            'last_trade_price'].rolling(time_window).std().values
-        output_df['moving_average_' + str(time_window)] = time_series_df[
-            'last_trade_price'].rolling(time_window).mean().values
+                      time_window, min_periods=1).min().values
+        output_df[
+            'volatility_' +
+            str(time_window)] = time_series_df['last_trade_price'].rolling(
+                time_window, min_periods=1).std().values
+        output_df[
+            'moving_average_' +
+            str(time_window)] = time_series_df['last_trade_price'].rolling(
+                time_window, min_periods=1).mean().values
         output_df[
             'moving_average_weighted_' +
             str(time_window)] = time_series_df['last_trade_price'].rolling(
-                time_window).apply(lambda x, y=time_window: np.dot(
+                time_window,
+                min_periods=1).apply(lambda x, y=time_window: np.dot(
                     x, np.arange(1, y + 1)) / np.arange(1, y + 1).sum(),
-                                   raw=True).values
+                                     raw=True).values
         output_df['bid_size_median_' +
                   str(time_window)] = time_series_df['bid_size'].rolling(
-                      time_window).median().astype('Int64').values
+                      time_window,
+                      min_periods=1).median().astype('Int64').values
         output_df['ask_size_median_' +
                   str(time_window)] = time_series_df['ask_size'].rolling(
-                      time_window).median().astype('Int64').values
+                      time_window,
+                      min_periods=1).median().astype('Int64').values
         output_df['bid_ask_spread_median_' +
                   str(time_window)] = temp_df['bid_ask_spread'].rolling(
-                      time_window).median().values
+                      time_window, min_periods=1).median().values
         output_df['vwap_' + str(time_window)] = (
-            temp_df['volume_price_product'].rolling(time_window).sum().values /
-            time_series_df['volume_total'].rolling(time_window).sum().values)
+            temp_df['volume_price_product'].rolling(
+                time_window, min_periods=1).sum().values /
+            time_series_df['volume_total'].rolling(time_window,
+                                                   min_periods=1).sum().values)
         output_df['volume_total_' +
                   str(time_window)] = time_series_df['volume_total'].rolling(
-                      time_window).sum().astype('Int64').values
+                      time_window, min_periods=1).sum().astype('Int64').values
         output_df['volume_aggressive_buy_' + str(
             time_window)] = time_series_df['volume_aggressive_buy'].rolling(
-                time_window).sum().astype('Int64').values
+                time_window, min_periods=1).sum().astype('Int64').values
         output_df['volume_aggressive_sell_' + str(
             time_window)] = time_series_df['volume_aggressive_sell'].rolling(
-                time_window).sum().astype('Int64').values
+                time_window, min_periods=1).sum().astype('Int64').values
         output_df[
             'message_count_quote_' +
             str(time_window)] = time_series_df['message_count_quote'].rolling(
-                time_window).sum().astype('Int64').values
+                time_window, min_periods=1).sum().astype('Int64').values
         output_df[
             'message_count_trade_' +
             str(time_window)] = time_series_df['message_count_trade'].rolling(
-                time_window).sum().astype('Int64').values
+                time_window, min_periods=1).sum().astype('Int64').values
 
     return output_df
 
