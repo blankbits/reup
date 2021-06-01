@@ -151,21 +151,21 @@ def get_output_df(time_series_df: pd.DataFrame,
         output_df['low_price_' +
                   str(time_window)] = temp_df['low_price'].rolling(
                       time_window, min_periods=1).min().values
-        output_df[
-            'volatility_' +
-            str(time_window)] = time_series_df['last_trade_price'].rolling(
-                time_window, min_periods=1).std().values
-        output_df[
-            'moving_average_' +
-            str(time_window)] = time_series_df['last_trade_price'].rolling(
-                time_window, min_periods=1).mean().values
+
+        # No min_periods specified for these features, since last_trade_price
+        # should be continuously populated after the first trade, and
+        # min_periods causes problems for moving_average_weighted calculation.
+        output_df['volatility_' + str(time_window)] = time_series_df[
+            'last_trade_price'].rolling(time_window).std().values
+        output_df['moving_average_' + str(time_window)] = time_series_df[
+            'last_trade_price'].rolling(time_window).mean().values
         output_df[
             'moving_average_weighted_' +
             str(time_window)] = time_series_df['last_trade_price'].rolling(
-                time_window,
-                min_periods=1).apply(lambda x, y=time_window: np.dot(
+                time_window).apply(lambda x, y=time_window: np.dot(
                     x, np.arange(1, y + 1)) / np.arange(1, y + 1).sum(),
-                                     raw=True).values
+                                   raw=True).values
+
         output_df['bid_size_median_' +
                   str(time_window)] = time_series_df['bid_size'].rolling(
                       time_window,
