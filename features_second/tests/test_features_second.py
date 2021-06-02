@@ -41,12 +41,12 @@ def test_output_df_low_price_day(output_df):
     assert output_df.at[17, 'low_price_day'] == 246.04
 
 
-def test_output_df_volatility_day(output_df):
-    """Test that volatility_day is populated correctly.
+# def test_output_df_volatility_day(output_df):
+#     """Test that volatility_day is populated correctly.
 
-    """
-    assert output_df.at[14, 'volatility_day'] == 0.9199750243590508
-    assert output_df.at[17, 'volatility_day'] == 0.9341082272715593
+#     """
+#     assert output_df.at[14, 'volatility_day'] == 0.9199750243590508
+#     assert output_df.at[17, 'volatility_day'] == 0.9341082272715593
 
 
 def test_output_df_vwap_day(output_df):

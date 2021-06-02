@@ -38,8 +38,8 @@ def get_output_df(time_series_df: pd.DataFrame,
         pd.Series([], dtype='float64'),
         'low_price_day':
         pd.Series([], dtype='float64'),
-        'volatility_day':
-        pd.Series([], dtype='float64'),
+        # 'volatility_day':
+        # pd.Series([], dtype='float64'),
         'vwap_day':
         pd.Series([], dtype='float64'),
         'volume_total_day':
@@ -123,8 +123,8 @@ def get_output_df(time_series_df: pd.DataFrame,
     output_df['high_price_day'] = temp_df['high_price'].expanding().max(
     ).values
     output_df['low_price_day'] = temp_df['low_price'].expanding().min().values
-    output_df['volatility_day'] = time_series_df['last_trade_price'].expanding(
-    ).std().values
+    # output_df['volatility_day'] = time_series_df['last_trade_price'].expanding(
+    # ).std().values
     output_df['vwap_day'] = (
         (time_series_df['vwap'] *
          time_series_df['volume_total']).expanding().sum() /
