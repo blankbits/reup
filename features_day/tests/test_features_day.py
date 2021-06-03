@@ -21,8 +21,22 @@ def fixture_output_df(time_series_df):
     """Create output data frame from test data.
 
     """
-    return fd.get_output_df(time_series_df, [1, 2], 1585747800.0, 1585747810.0,
+    return fd.get_output_df(time_series_df, [1, 2], 1585747801.0, 1585747810.0,
                             2)
+
+
+def test_output_df_open_timestamp(output_df):
+    """Test that open timestamp is populated correctly.
+
+    """
+    assert output_df.at[0, 'open_timestamp'] == 1585747801.0
+
+
+def test_output_df_close_timestamp(output_df):
+    """Test that close timestamp is populated correctly.
+
+    """
+    assert output_df.at[0, 'close_timestamp'] == 1585747810.0
 
 
 def test_output_df_weekday(output_df):

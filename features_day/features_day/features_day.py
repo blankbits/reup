@@ -32,7 +32,7 @@ def get_time_window_df(time_series_df: pd.DataFrame, time_windows: List[int],
 
     """
     open_slice_row = time_series_df.loc[time_series_df['timestamp'] ==
-                                        open_timestamp].index[0] + 1
+                                        open_timestamp].index[0]
     close_slice_row = time_series_df.loc[time_series_df['timestamp'] ==
                                          close_timestamp].index[0] + 1
     df_columns = []
@@ -96,12 +96,15 @@ def get_output_df(time_series_df: pd.DataFrame, time_windows: List[int],
     vwap_day = (time_series_df['vwap'] *
                 time_series_df['volume_total']).sum() / volume_total_day
 
-    partial_df = pd.DataFrame(
-        [[weekday, high_price, low_price, vwap_day, volume_total_day]],
-        columns=[
-            'weekday', 'high_price', 'low_price', 'vwap_day',
-            'volume_total_day'
-        ])
+    partial_df = pd.DataFrame([[
+        open_timestamp, close_timestamp, weekday, high_price, low_price,
+        vwap_day, volume_total_day
+    ]],
+                              columns=[
+                                  'open_timestamp', 'close_timestamp',
+                                  'weekday', 'high_price', 'low_price',
+                                  'vwap_day', 'volume_total_day'
+                              ])
     time_window_df = get_time_window_df(time_series_df, time_windows,
                                         open_timestamp, close_timestamp)
     return pd.concat([partial_df, time_window_df], axis=1)
@@ -131,10 +134,16 @@ def main_lambda(event: dict, context) -> None:
     # Parse event params, then create and upload output data frame.
     date_str, _ = event['s3_key_input'].split('/')[-3:-1]
     weekday = datetime.datetime.strptime(date_str, '%Y-%m-%d').weekday()
-    open_timestamp = reup_utils.get_timestamp(date_str, event['open_time'],
-                                              event['time_zone'])
-    close_timestamp = reup_utils.get_timestamp(date_str, event['close_time'],
-                                               event['time_zone'])
+    open_timestamp = np.max([
+        reup_utils.get_timestamp(date_str, event['open_time'],
+                                 event['time_zone']),
+        time_series_df.at[0, 'timestamp']
+    ])
+    close_timestamp = np.min([
+        reup_utils.get_timestamp(date_str, event['close_time'],
+                                 event['time_zone']),
+        time_series_df.at[time_series_df.shape[0] - 1, 'timestamp']
+    ])
     output_df = get_output_df(time_series_df, event['time_windows'],
                               open_timestamp, close_timestamp, weekday)
     reup_utils.upload_s3_object(
