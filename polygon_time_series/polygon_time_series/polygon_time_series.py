@@ -208,7 +208,6 @@ def main_lambda(event: dict, context) -> None:
     quotes_local_path = reup_utils.download_s3_object(event['s3_bucket'],
                                                       event['s3_key_quotes'])
     with gzip.open(quotes_local_path, 'rb') as gzip_file:
-        # quotes_df = pd.read_csv(gzip_file)
         quotes_df = pd.read_csv(gzip_file,
                                 dtype={
                                     'sequence_number': 'Int64',
@@ -227,7 +226,6 @@ def main_lambda(event: dict, context) -> None:
     trades_local_path = reup_utils.download_s3_object(event['s3_bucket'],
                                                       event['s3_key_trades'])
     with gzip.open(trades_local_path, 'rb') as gzip_file:
-        # trades_df = pd.read_csv(gzip_file)
         trades_df = pd.read_csv(gzip_file,
                                 dtype={
                                     'sequence_number': 'Int64',

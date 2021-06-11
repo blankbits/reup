@@ -15,7 +15,20 @@ def fixture_quotes_df():
     """Load quotes test data.
 
     """
-    return pd.read_csv('tests/quotes.csv')
+    return pd.read_csv('tests/quotes.csv',
+                       dtype={
+                           'sequence_number': 'Int64',
+                           'sip_timestamp': 'Int64',
+                           'exchange_timestamp': 'Int64',
+                           'bid_price': 'float64',
+                           'bid_size': 'Int64',
+                           'bid_exchange': 'Int64',
+                           'ask_price': 'float64',
+                           'ask_size': 'Int64',
+                           'ask_exchange': 'Int64',
+                           'conditions': 'string',
+                           'indicators': 'string'
+                       })
 
 
 @pytest.fixture(name='trades_df', scope='module')
@@ -23,7 +36,16 @@ def fixture_trades_df():
     """Load trades test data.
 
     """
-    return pd.read_csv('tests/trades.csv')
+    return pd.read_csv('tests/trades.csv',
+                       dtype={
+                           'sequence_number': 'Int64',
+                           'sip_timestamp': 'Int64',
+                           'exchange_timestamp': 'Int64',
+                           'price': 'float64',
+                           'size': 'Int64',
+                           'exchange': 'Int64',
+                           'conditions': 'string'
+                       })
 
 
 @pytest.fixture(name='seconds_df', scope='module')
