@@ -1259,37 +1259,35 @@ dates: [
 # '2020-12-30',
 # '2020-12-31',
 ]
-s3_bucket: 'reup'
-# s3_bucket: 'reup-scratch'
-s3_universe_prefixes: [
-  'universes/sp-500/',
-]
+s3_bucket: reup
+# s3_bucket: reup-scratch
+s3_universe_prefixes: [universes/sp-500/]
 
 polygon_tick_data:
   is_enabled: False
-  lambda_invoke_config: '../polygon_tick_data/polygon_tick_data/lambda_invoke_config.yaml'
-  lambda_event: '../polygon_tick_data/polygon_tick_data/lambda_event.json'
+  lambda_invoke_config: ../polygon_tick_data/polygon_tick_data/lambda_invoke_config.yaml
+  lambda_event: ../polygon_tick_data/polygon_tick_data/lambda_event.json
   max_retry_count: 3
   retry_seconds: 300
 
 polygon_time_series:
   is_enabled: False
-  lambda_invoke_config: '../polygon_time_series/polygon_time_series/lambda_invoke_config.yaml'
-  lambda_event: '../polygon_time_series/polygon_time_series/lambda_event.json'
+  lambda_invoke_config: ../polygon_time_series/polygon_time_series/lambda_invoke_config.yaml
+  lambda_event: ../polygon_time_series/polygon_time_series/lambda_event.json
   max_retry_count: 3
   retry_seconds: 80
 
 features_second:
   is_enabled: False
-  lambda_invoke_config: '../features_second/features_second/lambda_invoke_config.yaml'
-  lambda_event: '../features_second/features_second/lambda_event.json'
+  lambda_invoke_config: ../features_second/features_second/lambda_invoke_config.yaml
+  lambda_event: ../features_second/features_second/lambda_event.json
   max_retry_count: 3
-  retry_seconds: 100
+  retry_seconds: 60
 
 features_day:
   is_enabled: False
-  lambda_invoke_config: '../features_day/features_day/lambda_invoke_config.yaml'
-  lambda_event: '../features_day/features_day/lambda_event.json'
+  lambda_invoke_config: ../features_day/features_day/lambda_invoke_config.yaml
+  lambda_event: ../features_day/features_day/lambda_event.json
   max_retry_count: 3
   retry_seconds: 20
 
