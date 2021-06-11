@@ -20,7 +20,8 @@ import yaml
 
 def download_s3_object(s3_bucket: str,
                        s3_key: str,
-                       local_path: str = '') -> str:
+                       local_path: str = '',
+                       thread_safe: bool = False) -> str:
     """Download an S3 object. If local path isn't specified, a unique local path
     compatible with Lambda will be generated.
 
@@ -28,6 +29,7 @@ def download_s3_object(s3_bucket: str,
         s3_bucket: S3 bucket name for object to download.
         s3_key: S3 key for object to download.
         local_path (optional): Local path.
+        thread_safe (optional): Flag to use S3 API in a thread safe manner.
 
     Returns:
         Local path for downloaded object.
@@ -37,10 +39,19 @@ def download_s3_object(s3_bucket: str,
     if not local_path:
         local_path = '/tmp/reup-{}'.format(uuid.uuid4())
 
-    logger.info('Downloading S3 object | %s',
-                's3_bucket:{}, s3_key:{}'.format(s3_bucket, s3_key))
+    logger.info(
+        'Downloading S3 object | %s',
+        's3_bucket:{}, s3_key:{}, local_path:{}, thread_safe:{}'.format(
+            s3_bucket, s3_key, local_path, thread_safe))
     try:
-        s3_client = boto3.client('s3')
+        if thread_safe:
+            # Create new session for thread safety.
+            session = boto3.session.Session()
+            s3_client = session.client('s3')
+        else:
+            # Use default session.
+            s3_client = boto3.client('s3')
+
         s3_client.download_file(s3_bucket, s3_key, local_path)
     except botocore.exceptions.ClientError as exception:
         logger.error('S3 object download failed')
