@@ -221,8 +221,23 @@ def main_lambda(event: dict, context) -> None:
     # Download time series CSV file from S3 and load into data frame.
     local_path = reup_utils.download_s3_object(event['s3_bucket'],
                                                event['s3_key_input'])
-    with gzip.open(local_path, 'rb') as f:
-        time_series_df = pd.read_csv(f)
+    with gzip.open(local_path, 'rb') as gzip_file:
+        time_series_df = pd.read_csv(gzip_file,
+                                     dtype={
+                                         'timestamp': 'float64',
+                                         'bid_price': 'float64',
+                                         'bid_size': 'int64',
+                                         'ask_price': 'float64',
+                                         'ask_size': 'int64',
+                                         'last_trade_price': 'float64',
+                                         'vwap': 'float64',
+                                         'volume_price_dict': 'string',
+                                         'volume_total': 'int64',
+                                         'volume_aggressive_buy': 'int64',
+                                         'volume_aggressive_sell': 'int64',
+                                         'message_count_quote': 'int64',
+                                         'message_count_trade': 'int64'
+                                     })
 
     # Create and upload output data frame.
     output_df = get_output_df(time_series_df, event['time_windows'])
