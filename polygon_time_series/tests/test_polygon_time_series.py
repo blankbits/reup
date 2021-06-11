@@ -77,8 +77,8 @@ def test_seconds_df_empty_second(seconds_df):
         0, 'last_trade_price']
 
     # Check that volume aggregations are empty or zero.
-    assert np.isnan(second_row.at[0, 'vwap'])
-    assert np.isnan(second_row.at[0, 'volume_price_dict'])
+    assert pd.isna(second_row.at[0, 'vwap'])
+    assert pd.isna(second_row.at[0, 'volume_price_dict'])
     assert second_row.at[0, 'volume_total'] == 0
     assert second_row.at[0, 'volume_aggressive_buy'] == 0
     assert second_row.at[0, 'volume_aggressive_sell'] == 0

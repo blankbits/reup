@@ -46,7 +46,7 @@ def init_seconds_df(quotes_df: pd.DataFrame) -> pd.DataFrame:
         'vwap':
         pd.Series([], dtype='float64'),
         'volume_price_dict':
-        pd.Series([], dtype='object'),
+        pd.Series([], dtype='string'),
         'volume_total':
         pd.Series([], dtype='Int64'),
         'volume_aggressive_buy':
@@ -208,12 +208,36 @@ def main_lambda(event: dict, context) -> None:
     quotes_local_path = reup_utils.download_s3_object(event['s3_bucket'],
                                                       event['s3_key_quotes'])
     with gzip.open(quotes_local_path, 'rb') as gzip_file:
-        quotes_df = pd.read_csv(gzip_file)
+        # quotes_df = pd.read_csv(gzip_file)
+        quotes_df = pd.read_csv(gzip_file,
+                                dtype={
+                                    'sequence_number': 'Int64',
+                                    'sip_timestamp': 'Int64',
+                                    'exchange_timestamp': 'Int64',
+                                    'bid_price': 'float64',
+                                    'bid_size': 'Int64',
+                                    'bid_exchange': 'Int64',
+                                    'ask_price': 'float64',
+                                    'ask_size': 'Int64',
+                                    'ask_exchange': 'Int64',
+                                    'conditions': 'string',
+                                    'indicators': 'string'
+                                })
 
     trades_local_path = reup_utils.download_s3_object(event['s3_bucket'],
                                                       event['s3_key_trades'])
     with gzip.open(trades_local_path, 'rb') as gzip_file:
-        trades_df = pd.read_csv(gzip_file)
+        # trades_df = pd.read_csv(gzip_file)
+        trades_df = pd.read_csv(gzip_file,
+                                dtype={
+                                    'sequence_number': 'Int64',
+                                    'sip_timestamp': 'Int64',
+                                    'exchange_timestamp': 'Int64',
+                                    'price': 'float64',
+                                    'size': 'Int64',
+                                    'exchange': 'Int64',
+                                    'conditions': 'string'
+                                })
 
     # Discard trades that should be ignored.
     trades_df = discard_trade_conditions(trades_df,
