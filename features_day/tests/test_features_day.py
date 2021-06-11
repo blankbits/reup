@@ -13,7 +13,22 @@ def fixture_time_series_df():
     """Load time series test data.
 
     """
-    return pd.read_csv('tests/time-series.csv')
+    return pd.read_csv('tests/time-series.csv',
+                       dtype={
+                           'timestamp': 'float64',
+                           'bid_price': 'float64',
+                           'bid_size': 'int64',
+                           'ask_price': 'float64',
+                           'ask_size': 'int64',
+                           'last_trade_price': 'float64',
+                           'vwap': 'float64',
+                           'volume_price_dict': 'string',
+                           'volume_total': 'int64',
+                           'volume_aggressive_buy': 'int64',
+                           'volume_aggressive_sell': 'int64',
+                           'message_count_quote': 'int64',
+                           'message_count_trade': 'int64'
+                       })
 
 
 @pytest.fixture(name='output_df', scope='module')
