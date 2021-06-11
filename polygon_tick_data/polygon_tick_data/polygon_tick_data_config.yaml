@@ -1,9 +1,9 @@
 # Comment out the filename lines to skip writing the respective files.
 symbols: ['AAPL']
 dates: ['2020-04-01']
-download_location: 'data'
-quotes_csv_filename: 'quotes.csv.gz'
-trades_csv_filename: 'trades.csv.gz'
+download_location: data
+quotes_csv_filename: quotes.csv.gz
+trades_csv_filename: trades.csv.gz
 response_limit: 50000
 
 # Passed through to logging.config.dictConfig(config).
