@@ -52,10 +52,32 @@ def get_time_window_df(time_series_df: pd.DataFrame, time_windows: List[int],
                           (close_slice_row -
                            i):close_slice_row]).sum() / volume_total_close
 
+        df_columns.append('bid_price_open_' + str(i))
+        df_data.append(time_series_df.at[open_slice_row + i - 1, 'bid_price'])
+        df_columns.append('bid_size_open_' + str(i))
+        df_data.append(time_series_df.at[open_slice_row + i - 1, 'bid_size'])
+        df_columns.append('ask_price_open_' + str(i))
+        df_data.append(time_series_df.at[open_slice_row + i - 1, 'ask_price'])
+        df_columns.append('ask_size_open_' + str(i))
+        df_data.append(time_series_df.at[open_slice_row + i - 1, 'ask_size'])
+        df_columns.append('last_trade_price_open_' + str(i))
+        df_data.append(time_series_df.at[open_slice_row + i - 1,
+                                         'last_trade_price'])
         df_columns.append('vwap_open_' + str(i))
         df_data.append(vwap_open)
         df_columns.append('volume_total_open_' + str(i))
         df_data.append(volume_total_open)
+        df_columns.append('bid_price_close_' + str(i))
+        df_data.append(time_series_df.at[close_slice_row - i, 'bid_price'])
+        df_columns.append('bid_size_close_' + str(i))
+        df_data.append(time_series_df.at[close_slice_row - i, 'bid_size'])
+        df_columns.append('ask_price_close_' + str(i))
+        df_data.append(time_series_df.at[close_slice_row - i, 'ask_price'])
+        df_columns.append('ask_size_close_' + str(i))
+        df_data.append(time_series_df.at[close_slice_row - i, 'ask_size'])
+        df_columns.append('last_trade_price_close_' + str(i))
+        df_data.append(time_series_df.at[close_slice_row - i,
+                                         'last_trade_price'])
         df_columns.append('vwap_close_' + str(i))
         df_data.append(vwap_close)
         df_columns.append('volume_total_close_' + str(i))
