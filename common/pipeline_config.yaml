@@ -1260,7 +1260,6 @@ dates: [
 # '2020-12-31',
 ]
 s3_bucket: reup
-# s3_bucket: reup-scratch
 s3_universe_prefixes: [universes/sp-500/]
 
 polygon_tick_data:

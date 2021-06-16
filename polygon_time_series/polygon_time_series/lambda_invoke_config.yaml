@@ -1,6 +1,5 @@
 lambda_function: polygon_time_series
 s3_bucket: reup
-# s3_bucket: reup-scratch
 s3_key_input_prefix: third-party/polygon-tick-data/
 s3_key_quotes_suffix: quotes.csv.gz
 s3_key_trades_suffix: trades.csv.gz

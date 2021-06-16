@@ -1,5 +1,5 @@
 {
-    "s3_bucket": "reup-scratch",
+    "s3_bucket": "reup-test",
     "s3_key_input": "historical-data/time-series/2020-04-01/AAPL/time-series.csv.gz",
     "s3_key_output": "features/second/2020-04-01/AAPL/features.csv.gz",
     "time_windows": [
