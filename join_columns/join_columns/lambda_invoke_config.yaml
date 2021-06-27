@@ -1,0 +1,8 @@
+lambda_function: join_columns
+s3_bucket: reup
+s3_key_input_prefix: features/day/
+s3_key_input_suffix: features.csv.gz
+s3_key_output_prefix: workspace/
+s3_key_output_suffix: join.csv.gz
+max_event_count: 600
+sleep_seconds: 10

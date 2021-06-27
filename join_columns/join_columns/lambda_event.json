@@ -1,0 +1,27 @@
+{
+    "s3_bucket": "reup-test",
+    "s3_key_input": "features/day/2020-04-01/AAPL/features.csv.gz",
+    "s3_key_output": "workspace/join.csv.gz",
+    "logging": {
+        "version": 1,
+        "formatters": {
+            "simple": {
+                "format": "%(asctime)s %(levelname)-8s %(name)s - %(message)s"
+            }
+        },
+        "handlers": {
+            "console": {
+                "class": "logging.StreamHandler",
+                "level": "INFO",
+                "formatter": "simple",
+                "stream": "ext://sys.stdout"
+            }
+        },
+        "root": {
+            "level": "INFO",
+            "handlers": [
+                "console"
+            ]
+        }
+    }
+}
