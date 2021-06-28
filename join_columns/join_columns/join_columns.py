@@ -2,14 +2,15 @@
 """Joins columns of data together in CSV format.
 
 """
-import datetime
+import concurrent.futures
 import gzip
 import json
 import logging
 import logging.config
-from typing import List
+import os
+# from typing import List
 
-import numpy as np
+# import numpy as np
 import pandas as pd
 
 import reup_utils
@@ -28,12 +29,37 @@ def main_lambda(event: dict, context) -> None:
 
     # Initialize logger.
     logging.config.dictConfig(event['logging'])
-    # logger = logging.getLogger(__name__)
+    logger = logging.getLogger(__name__)
+    logger.info(json.dumps(event))
 
-    # # Download time series CSV file from S3 and load into data frame.
-    # local_path = reup_utils.download_s3_object(event['s3_bucket'],
-    #                                            event['s3_key_input'])
-    # with gzip.open(local_path, 'rb') as gzip_file:
+    data_frames = []
+    with concurrent.futures.ThreadPoolExecutor(
+            max_workers=event['s3_max_workers']) as executor:
+        futures = []
+        for s3_input in event['s3_inputs']:
+            futures.append(
+                executor.submit(reup_utils.download_s3_object,
+                                event['s3_bucket'],
+                                s3_input['s3_key'],
+                                thread_safe=True))
+
+        for future in concurrent.futures.as_completed(futures):
+            local_path = future.result()
+            logger.info(local_path)
+            with gzip.open(local_path, 'rb') as gzip_file:
+                # TODO: Add dtype info to read_csv.
+                data_frames.append(pd.read_csv(gzip_file))
+
+            os.remove(local_path)
+
+    for df in data_frames:
+        print(df.head())
+
+    # for i in range(len(data_frames)):
+    #     data_frames[i] = data_frames[i].add_prefix(symbols[i] + '_')
+
+    # print(pd.concat(data_frames, axis=1).to_string())
+
     #     time_series_df = pd.read_csv(gzip_file,
     #                                  dtype={
     #                                      'timestamp': 'float64',
@@ -51,19 +77,6 @@ def main_lambda(event: dict, context) -> None:
     #                                      'message_count_trade': 'int64'
     #                                  })
 
-    # # Parse event params, then create and upload output data frame.
-    # date_str, _ = event['s3_key_input'].split('/')[-3:-1]
-    # weekday = datetime.datetime.strptime(date_str, '%Y-%m-%d').weekday()
-    # open_timestamp = np.max([
-    #     reup_utils.get_timestamp(date_str, event['open_time'],
-    #                              event['time_zone']),
-    #     time_series_df.at[0, 'timestamp']
-    # ])
-    # close_timestamp = np.min([
-    #     reup_utils.get_timestamp(date_str, event['close_time'],
-    #                              event['time_zone']),
-    #     time_series_df.at[time_series_df.shape[0] - 1, 'timestamp']
-    # ])
     # output_df = get_output_df(time_series_df, event['time_windows'],
     #                           open_timestamp, close_timestamp, weekday)
     # reup_utils.upload_s3_object(
