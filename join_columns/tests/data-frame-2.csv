@@ -1,0 +1,4 @@
+timestamp,str_col_0,float_col_0,int_col_0,str_col_1,float_col_1,int_col_1
+103.0,xyz,933.3,39,ABC,833.3,38
+104.0,Xyz,944.4,49,Abc,844.4,48
+105.0,XYZ,955.5,59,abc,855.5,58

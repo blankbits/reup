@@ -1,0 +1,6 @@
+timestamp,str_col,float_col,int_col
+103.0,F,61.1,6
+104.0,GG,72.2,7
+105.0,HHH,83.3,8
+106.0,IIII,94.4,9
+107.0,JJJJJ,5.5,0
