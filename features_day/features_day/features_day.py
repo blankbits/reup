@@ -35,7 +35,7 @@ def get_time_window_df(time_series_df: pd.DataFrame, time_windows: List[int],
                                         open_timestamp].index[0]
     close_slice_row = time_series_df.loc[time_series_df['timestamp'] ==
                                          close_timestamp].index[0] + 1
-    df_columns = []
+    df_columns: List[str] = []
     df_data = []
     for i in time_windows:
         volume_total_open = time_series_df['volume_total'].iloc[
@@ -145,7 +145,8 @@ def main_lambda(event: dict, context) -> None:
 
     # Initialize logger.
     logging.config.dictConfig(event['logging'])
-    # logger = logging.getLogger(__name__)
+    logger = logging.getLogger(__name__)
+    logger.info(json.dumps(event))
 
     # Download time series CSV file from S3 and load into data frame.
     local_path = reup_utils.download_s3_object(event['s3_bucket'],
