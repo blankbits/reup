@@ -216,7 +216,8 @@ def main_lambda(event: dict, context) -> None:
 
     # Initialize logger.
     logging.config.dictConfig(event['logging'])
-    # logger = logging.getLogger(__name__)
+    logger = logging.getLogger(__name__)
+    logger.info(json.dumps(event))
 
     # Download time series CSV file from S3 and load into data frame.
     local_path = reup_utils.download_s3_object(event['s3_bucket'],
