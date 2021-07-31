@@ -13,11 +13,13 @@ Example:
 import argparse
 import enum
 import gzip
+import json
 import logging
 import logging.config
 import os
 import sys
 import threading
+from typing import List
 
 import boto3
 import botocore
@@ -323,9 +325,11 @@ def main_common(environment_type: EnvironmentType, config: dict,
     """
     # Initialize logger.
     logging.config.dictConfig(config['logging'])
+    logger = logging.getLogger(__name__)
+    logger.info(json.dumps(config))
 
     # Threads for writing files async.
-    threads = []
+    threads: List[threading.Thread] = []
 
     # Process each date and symbol in the config.
     for date in config['dates']:
