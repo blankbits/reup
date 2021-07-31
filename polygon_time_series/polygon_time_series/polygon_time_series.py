@@ -202,7 +202,8 @@ def main_lambda(event: dict, context) -> None:
 
     # Initialize logger.
     logging.config.dictConfig(event['logging'])
-    # logger = logging.getLogger(__name__)
+    logger = logging.getLogger(__name__)
+    logger.info(json.dumps(event))
 
     # Download quote and trade CSV files from S3 and load into data frames.
     quotes_local_path = reup_utils.download_s3_object(event['s3_bucket'],
